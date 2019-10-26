@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +16,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasm.expression.expression import *
-from miasm.arch.ia32_reg import *
-from miasm.arch.ia32_arch import *
+from miasmX.expression.expression import *
+from miasmX.arch.ia32_reg import *
+from miasmX.arch.ia32_arch import *
 import math
+try:
+    # Needed for compatibility with python2.3
+    from plasmasm.python.compatibility import set
+except ImportError:
+    pass
 
 # interrupt with eip update after instr
 EXCEPT_CODE_AUTOMOD = (1<<0)
@@ -102,6 +108,15 @@ reg_mm5 = 'mm5'
 reg_mm6 = 'mm6'
 reg_mm7 = 'mm7'
 
+reg_xmm0 = 'xmm0'
+reg_xmm1 = 'xmm1'
+reg_xmm2 = 'xmm2'
+reg_xmm3 = 'xmm3'
+reg_xmm4 = 'xmm4'
+reg_xmm5 = 'xmm5'
+reg_xmm6 = 'xmm6'
+reg_xmm7 = 'xmm7'
+
 
 reg_tsc1 = "tsc1"
 reg_tsc2 = "tsc2"
@@ -130,54 +145,54 @@ reg_float_st7 = 'float_st7'
 
 
 #commonly used
-init_eax = ExprId("init_eax", is_term=True)
-init_ebx = ExprId("init_ebx", is_term=True)
-init_ecx = ExprId("init_ecx", is_term=True)
-init_edx = ExprId("init_edx", is_term=True)
-init_esi = ExprId("init_esi", is_term=True)
-init_edi = ExprId("init_edi", is_term=True)
-init_esp = ExprId("init_esp", is_term=True)
-init_ebp = ExprId("init_ebp", is_term=True)
+init_eax = ExprId("init_eax", is_term=True, is_reg=True)
+init_ebx = ExprId("init_ebx", is_term=True, is_reg=True)
+init_ecx = ExprId("init_ecx", is_term=True, is_reg=True)
+init_edx = ExprId("init_edx", is_term=True, is_reg=True)
+init_esi = ExprId("init_esi", is_term=True, is_reg=True)
+init_edi = ExprId("init_edi", is_term=True, is_reg=True)
+init_esp = ExprId("init_esp", is_term=True, is_reg=True)
+init_ebp = ExprId("init_ebp", is_term=True, is_reg=True)
 
 
 
 
-init_tsc1 = ExprId("init_tsc1")
-init_tsc2 = ExprId("init_tsc2")
+init_tsc1 = ExprId("init_tsc1", is_reg=True)
+init_tsc2 = ExprId("init_tsc2", is_reg=True)
 
-init_cr0 = ExprId("init_cr0")
-
-
-init_zf    = ExprId("init_zf", size=1)
-init_nf    = ExprId("init_nf", size=1)
-init_pf    = ExprId("init_pf", size=1)
-init_of    = ExprId("init_of", size=1)
-init_cf    = ExprId("init_cf", size=1)
-init_tf    = ExprId("init_tf", size=1)
-init_i_f   = ExprId("init_i_f", size=1)
-init_df    = ExprId("init_df", size=1)
-init_af    = ExprId("init_af", size=1)
-init_iopl  = ExprId("init_iopl", size=2)
-init_nt    = ExprId("init_nt", size=1)
-init_rf    = ExprId("init_rf", size=1)
-init_vm    = ExprId("init_vm", size=1)
-init_ac    = ExprId("init_ac", size=1)
-init_vif   = ExprId("init_vif", size=1)
-init_vip   = ExprId("init_vip", size=1)
-init_i_d   = ExprId("init_i_d", size=1)
-init_tsc1  = ExprId("init_tsc1")
-init_tsc2  = ExprId("init_tsc2")
+init_cr0 = ExprId("init_cr0", is_reg=True)
 
 
-eax = ExprId(reg_eax)
-ebx = ExprId(reg_ebx)
-ecx = ExprId(reg_ecx)
-edx = ExprId(reg_edx)
-esp = ExprId(reg_esp)
-ebp = ExprId(reg_ebp)
-eip = ExprId(reg_eip)
-esi = ExprId(reg_esi)
-edi = ExprId(reg_edi)
+init_zf    = ExprId("init_zf", size=1, is_reg=True)
+init_nf    = ExprId("init_nf", size=1, is_reg=True)
+init_pf    = ExprId("init_pf", size=1, is_reg=True)
+init_of    = ExprId("init_of", size=1, is_reg=True)
+init_cf    = ExprId("init_cf", size=1, is_reg=True)
+init_tf    = ExprId("init_tf", size=1, is_reg=True)
+init_i_f   = ExprId("init_i_f", size=1, is_reg=True)
+init_df    = ExprId("init_df", size=1, is_reg=True)
+init_af    = ExprId("init_af", size=1, is_reg=True)
+init_iopl  = ExprId("init_iopl", size=2, is_reg=True)
+init_nt    = ExprId("init_nt", size=1, is_reg=True)
+init_rf    = ExprId("init_rf", size=1, is_reg=True)
+init_vm    = ExprId("init_vm", size=1, is_reg=True)
+init_ac    = ExprId("init_ac", size=1, is_reg=True)
+init_vif   = ExprId("init_vif", size=1, is_reg=True)
+init_vip   = ExprId("init_vip", size=1, is_reg=True)
+init_i_d   = ExprId("init_i_d", size=1, is_reg=True)
+init_tsc1  = ExprId("init_tsc1", is_reg=True)
+init_tsc2  = ExprId("init_tsc2", is_reg=True)
+
+
+eax = ExprId(reg_eax, is_reg=True)
+ebx = ExprId(reg_ebx, is_reg=True)
+ecx = ExprId(reg_ecx, is_reg=True)
+edx = ExprId(reg_edx, is_reg=True)
+esp = ExprId(reg_esp, is_reg=True)
+ebp = ExprId(reg_ebp, is_reg=True)
+eip = ExprId(reg_eip, is_reg=True)
+esi = ExprId(reg_esi, is_reg=True)
+edi = ExprId(reg_edi, is_reg=True)
 
 
 r_al = eax[:8]
@@ -200,60 +215,69 @@ r_si = esi[:16]
 r_di = edi[:16]
 
 
-dr0 = ExprId(reg_dr0)
-dr1 = ExprId(reg_dr1)
-dr2 = ExprId(reg_dr2)
-dr3 = ExprId(reg_dr3)
-dr4 = ExprId(reg_dr4)
-dr5 = ExprId(reg_dr5)
-dr6 = ExprId(reg_dr6)
-dr7 = ExprId(reg_dr7)
+dr0 = ExprId(reg_dr0, is_reg=True)
+dr1 = ExprId(reg_dr1, is_reg=True)
+dr2 = ExprId(reg_dr2, is_reg=True)
+dr3 = ExprId(reg_dr3, is_reg=True)
+dr4 = ExprId(reg_dr4, is_reg=True)
+dr5 = ExprId(reg_dr5, is_reg=True)
+dr6 = ExprId(reg_dr6, is_reg=True)
+dr7 = ExprId(reg_dr7, is_reg=True)
 
-cr0 = ExprId(reg_cr0)
-cr1 = ExprId(reg_cr1)
-cr2 = ExprId(reg_cr2)
-cr3 = ExprId(reg_cr3)
-cr4 = ExprId(reg_cr4)
-cr5 = ExprId(reg_cr5)
-cr6 = ExprId(reg_cr6)
-cr7 = ExprId(reg_cr7)
+cr0 = ExprId(reg_cr0, is_reg=True)
+cr1 = ExprId(reg_cr1, is_reg=True)
+cr2 = ExprId(reg_cr2, is_reg=True)
+cr3 = ExprId(reg_cr3, is_reg=True)
+cr4 = ExprId(reg_cr4, is_reg=True)
+cr5 = ExprId(reg_cr5, is_reg=True)
+cr6 = ExprId(reg_cr6, is_reg=True)
+cr7 = ExprId(reg_cr7, is_reg=True)
 
-mm0 = ExprId(reg_mm0, 64)
-mm1 = ExprId(reg_mm1, 64)
-mm2 = ExprId(reg_mm2, 64)
-mm3 = ExprId(reg_mm3, 64)
-mm4 = ExprId(reg_mm4, 64)
-mm5 = ExprId(reg_mm5, 64)
-mm6 = ExprId(reg_mm6, 64)
-mm7 = ExprId(reg_mm7, 64)
+mm0 = ExprId(reg_mm0, 64, is_reg=True)
+mm1 = ExprId(reg_mm1, 64, is_reg=True)
+mm2 = ExprId(reg_mm2, 64, is_reg=True)
+mm3 = ExprId(reg_mm3, 64, is_reg=True)
+mm4 = ExprId(reg_mm4, 64, is_reg=True)
+mm5 = ExprId(reg_mm5, 64, is_reg=True)
+mm6 = ExprId(reg_mm6, 64, is_reg=True)
+mm7 = ExprId(reg_mm7, 64, is_reg=True)
+
+xmm0 = ExprId(reg_xmm0, 128, is_reg=True)
+xmm1 = ExprId(reg_xmm1, 128, is_reg=True)
+xmm2 = ExprId(reg_xmm2, 128, is_reg=True)
+xmm3 = ExprId(reg_xmm3, 128, is_reg=True)
+xmm4 = ExprId(reg_xmm4, 128, is_reg=True)
+xmm5 = ExprId(reg_xmm5, 128, is_reg=True)
+xmm6 = ExprId(reg_xmm6, 128, is_reg=True)
+xmm7 = ExprId(reg_xmm7, 128, is_reg=True)
 
 
-eflag= ExprId(reg_eflag)
-tmp1= ExprId(reg_tmp1)
-zf = ExprId(reg_zf, size=1)
-nf = ExprId(reg_nf, size=1)
-pf = ExprId(reg_pf, size=1)
-of = ExprId(reg_of, size=1)
-cf = ExprId(reg_cf, size=1)
-tf = ExprId(reg_tf , size=1)
-i_f= ExprId(reg_if , size=1)
-df = ExprId(reg_df , size=1)
-af = ExprId(reg_af , size=1)
-iopl=ExprId(reg_iopl,size=2)
-nt = ExprId(reg_nt , size=1)
-rf = ExprId(reg_rf , size=1)
-vm = ExprId(reg_vm , size=1)
-ac = ExprId(reg_ac , size=1)
-vif= ExprId(reg_vif, size=1)
-vip= ExprId(reg_vip, size=1)
-i_d= ExprId(reg_id , size=1)
+eflag= ExprId(reg_eflag, is_reg=True)
+tmp1= ExprId(reg_tmp1, is_reg=True)
+zf = ExprId(reg_zf, size=1, is_reg=True)
+nf = ExprId(reg_nf, size=1, is_reg=True)
+pf = ExprId(reg_pf, size=1, is_reg=True)
+of = ExprId(reg_of, size=1, is_reg=True)
+cf = ExprId(reg_cf, size=1, is_reg=True)
+tf = ExprId(reg_tf , size=1, is_reg=True)
+i_f= ExprId(reg_if , size=1, is_reg=True)
+df = ExprId(reg_df , size=1, is_reg=True)
+af = ExprId(reg_af , size=1, is_reg=True)
+iopl=ExprId(reg_iopl,size=2, is_reg=True)
+nt = ExprId(reg_nt , size=1, is_reg=True)
+rf = ExprId(reg_rf , size=1, is_reg=True)
+vm = ExprId(reg_vm , size=1, is_reg=True)
+ac = ExprId(reg_ac , size=1, is_reg=True)
+vif= ExprId(reg_vif, size=1, is_reg=True)
+vip= ExprId(reg_vip, size=1, is_reg=True)
+i_d= ExprId(reg_id , size=1, is_reg=True)
 
-es = ExprId(reg_es, size = 16)
-cs = ExprId(reg_cs, size = 16)
-ss = ExprId(reg_ss, size = 16)
-ds = ExprId(reg_ds, size = 16)
-fs = ExprId(reg_fs, size = 16)
-gs = ExprId(reg_gs, size = 16)
+es = ExprId(reg_es, size = 16, is_reg=True)
+cs = ExprId(reg_cs, size = 16, is_reg=True)
+ss = ExprId(reg_ss, size = 16, is_reg=True)
+ds = ExprId(reg_ds, size = 16, is_reg=True)
+fs = ExprId(reg_fs, size = 16, is_reg=True)
+gs = ExprId(reg_gs, size = 16, is_reg=True)
 
 segm_dict = {
     reg_es:es,
@@ -264,28 +288,28 @@ segm_dict = {
     reg_gs:gs,
     }
 
-tsc1 = ExprId(reg_tsc1, size = 32)
-tsc2 = ExprId(reg_tsc2, size = 32)
+tsc1 = ExprId(reg_tsc1, size = 32, is_reg=True)
+tsc2 = ExprId(reg_tsc2, size = 32, is_reg=True)
 
-float_c0 = ExprId(reg_float_c0)
-float_c1 = ExprId(reg_float_c1)
-float_c2 = ExprId(reg_float_c2)
-float_c3 = ExprId(reg_float_c3)
-float_stack_ptr = ExprId(reg_float_stack_ptr)
-float_control = ExprId(reg_float_control)
-float_eip = ExprId(reg_float_eip)
-float_cs = ExprId(reg_float_cs, size=16)
-float_address = ExprId(reg_float_address)
-float_ds = ExprId(reg_float_ds, size=16)
+float_c0 = ExprId(reg_float_c0, is_reg=True)
+float_c1 = ExprId(reg_float_c1, is_reg=True)
+float_c2 = ExprId(reg_float_c2, is_reg=True)
+float_c3 = ExprId(reg_float_c3, is_reg=True)
+float_stack_ptr = ExprId(reg_float_stack_ptr, is_reg=True)
+float_control = ExprId(reg_float_control, is_reg=True)
+float_eip = ExprId(reg_float_eip, is_reg=True)
+float_cs = ExprId(reg_float_cs, size=16, is_reg=True)
+float_address = ExprId(reg_float_address, is_reg=True)
+float_ds = ExprId(reg_float_ds, size=16, is_reg=True)
 
-float_st0 = ExprId(reg_float_st0, 64)
-float_st1 = ExprId(reg_float_st1, 64)
-float_st2 = ExprId(reg_float_st2, 64)
-float_st3 = ExprId(reg_float_st3, 64)
-float_st4 = ExprId(reg_float_st4, 64)
-float_st5 = ExprId(reg_float_st5, 64)
-float_st6 = ExprId(reg_float_st6, 64)
-float_st7 = ExprId(reg_float_st7, 64)
+float_st0 = ExprId(reg_float_st0, 64, is_reg=True)
+float_st1 = ExprId(reg_float_st1, 64, is_reg=True)
+float_st2 = ExprId(reg_float_st2, 64, is_reg=True)
+float_st3 = ExprId(reg_float_st3, 64, is_reg=True)
+float_st4 = ExprId(reg_float_st4, 64, is_reg=True)
+float_st5 = ExprId(reg_float_st5, 64, is_reg=True)
+float_st6 = ExprId(reg_float_st6, 64, is_reg=True)
+float_st7 = ExprId(reg_float_st7, 64, is_reg=True)
 
 float_list = [
     float_st0 ,
@@ -401,10 +425,16 @@ all_registers = [
 
     ]
 
+# Not true registers, but should be distinguised from symbols having
+# the same name
+vm_exception_flags = ExprId('vmcpu.vm_exception_flags', is_reg=True)
+gdt = ExprId('gdt', is_reg=True)
+
 tab_uintsize ={8:uint8,
                16:uint16,
                32:uint32,
-               64:uint64
+               64:uint64,
+               128:uint128,
                }
 
 tab_mode ={'u16':uint16,
@@ -418,6 +448,9 @@ tab_mode_size ={'u16':16,
 tab_afs_int ={x86_afs.u08:uint8,
               x86_afs.u16:uint16,
               x86_afs.u32:uint32,
+              x86_afs.f64:uint64,
+              x86_afs.mm:uint64,
+              x86_afs.xmm:uint128,
               }
 
 class ia32info:
@@ -817,46 +850,19 @@ def shrd(info, a, b, c):
     e.append(ExprAff(a, d))
     return e
 
-def sal(info, a, b):
-    e= []
-    shifter = ExprOp('&',b, ExprInt_from(b, 0x1f))
-
-    c = ExprOp('a<<', a, shifter)
-    new_cf = ExprOp('&',
-                    ExprInt_from(a, 1),
-                    ExprOp('>>',
-                           a,
-                           ExprOp('-',
-                                  ExprInt_from(b, a.get_size()),
-                                  shifter
-                                  )
-                           )
-                    )
-    e.append(ExprAff(cf, ExprCond(shifter,
-                                  new_cf,
-                                  cf)
-                     )
-             )
-    e+=update_flag_znp(c)
-    e.append(ExprAff(of, ExprOp('^', get_op_msb(c), new_cf)))
-    e.append(ExprAff(a, c))
-    return e
-
 def shl(info, a, b):
     e= []
     shifter = ExprOp('&',b, ExprInt_from(b, 0x1f))
 
     c = ExprOp('<<', a, shifter)
-    new_cf = ExprOp('&',
-                    ExprInt_from(a, 1),
-                    ExprOp('>>',
-                           a,
-                           ExprOp('-',
-                                  ExprInt_from(b, a.get_size()),
-                                  shifter
-                                  )
-                           )
-                    )
+    new_cf = ExprOp('>>',
+                   a,
+                   ExprOp('-',
+                          ExprInt_from(b, a.get_size()),
+                          shifter
+                          )
+                   )
+    new_cf = new_cf[0:1]
     e.append(ExprAff(cf, ExprCond(shifter,
                                   new_cf,
                                   cf)
@@ -922,10 +928,22 @@ def std(info):
     return     [ExprAff(df, ExprInt32(1))]
 
 def cli(info):
-    return     [ExprAff(i_f, ExprInt32(0))]
+    # The decision table for cli results is complicated,
+    # depending on whether we are in real-address mode, protected mode,
+    # virtual-8086 mode, and on the values of IOPL, CPL, PVI, VIP and VME
+    e= []
+    e.append(ExprAff(i_f, ExprInt32(0)) )
+    e.append(ExprAff(vm_exception_flags, ExprInt32(EXCEPT_PRIV_INSN)) )
+    return e
 
 def sti(info):
-    return     [ExprAff(ExprId('vmcpu.vm_exception_flags'), ExprInt32(EXCEPT_PRIV_INSN))]
+    # The decision table for sti results is complicated,
+    # depending on whether we are in real-address mode, protected mode,
+    # virtual-8086 mode, and on the values of IOPL, CPL, PVI, VIP and VME
+    e= []
+    e.append(ExprAff(i_f, ExprInt32(1)) )
+    e.append(ExprAff(vm_exception_flags, ExprInt32(EXCEPT_PRIV_INSN)) )
+    return e
 
 def inc(info, a):
     e= []
@@ -1147,7 +1165,7 @@ def compose_eflag(s = 32):
     args = []
 
     regs = [cf, ExprInt32(1), pf, ExprInt32(0), af, ExprInt32(0), zf, nf, tf, i_f, df, of]
-    for i in xrange(len(regs)):
+    for i in range(len(regs)):
         args.append((regs[i],i, i+1))
 
     args.append((iopl,12, 14))
@@ -1158,7 +1176,7 @@ def compose_eflag(s = 32):
         regs = [nt, ExprInt32(0)]
     else:
         raise ValueError('unk size')
-    for i in xrange(len(regs)):
+    for i in range(len(regs)):
         args.append((regs[i],i+14, i+15))
     if s == 32:
         args.append((ExprInt32(0),22, 32))
@@ -1220,7 +1238,7 @@ def pushad(info):
     else:
         s = 32
         regs = [eax, ecx, edx, ebx, esp, ebp, esi, edi]
-    for i in xrange(len(regs)):
+    for i in range(len(regs)):
         c = ExprOp('+', esp, ExprInt32(-(s/8)*(i+1)))
         e.append(ExprAff(ExprMem(c, s), regs[i]))
     e.append(ExprAff(esp, c))
@@ -1239,7 +1257,7 @@ def popad(info):
         myesp = esp
         regs = [eax, ecx, edx, ebx, esp, ebp, esi, edi]
     regs.reverse()
-    for i in xrange(len(regs)):
+    for i in range(len(regs)):
         if regs[i] == myesp:
             continue
         c = ExprOp('+', esp, ExprInt32((s/8)*i))
@@ -1354,12 +1372,12 @@ def jmpf(info, a, seg):
     return e
 
 
-def jz(info, a, b):
+def je(info, a, b):
     e= []
     e.append(ExprAff(eip, ExprCond(zf, b, a)))
     return e
 
-def jnz(info, a, b):
+def jne(info, a, b):
     e= []
     e.append(ExprAff(eip, ExprCond(zf, a, b)))
     return e
@@ -1654,11 +1672,11 @@ def float_prev(flt):
         return None
     i = float_list.index(flt)
     if i == 0:
-        fds
+        i = 1 # HACK
     flt = float_list[i-1]
     return flt
 
-def float_pop(avoid_flt = None):
+def float_pop(avoid_flt = None, src = None):
     avoid_flt = float_prev(avoid_flt)
     e= []
     if avoid_flt != float_st0:
@@ -1676,9 +1694,23 @@ def float_pop(avoid_flt = None):
     if avoid_flt != float_st6:
         e.append(ExprAff(float_st6, float_st7))
     if avoid_flt != float_st7:
-        e.append(ExprAff(float_st7, ExprInt32(0)))
+        if src is None: src = ExprInt32(0)
+        e.append(ExprAff(float_st7, src))
     e.append(ExprAff(float_stack_ptr, ExprOp('-', float_stack_ptr, ExprInt32(1))))
     return e
+
+def float_push(src):
+    e = []
+    e.append(ExprAff(float_st7, float_st6))
+    e.append(ExprAff(float_st6, float_st5))
+    e.append(ExprAff(float_st5, float_st4))
+    e.append(ExprAff(float_st4, float_st3))
+    e.append(ExprAff(float_st3, float_st2))
+    e.append(ExprAff(float_st2, float_st1))
+    e.append(ExprAff(float_st1, float_st0))
+    e.append(ExprAff(float_st0, src))
+    return e
+
 
 # XXX TODO
 def fcom(info, a):
@@ -1703,22 +1735,39 @@ def ficom(info, a):
     e += set_float_cs_eip(info)
     return e
 
+# Invalid emulation, only read/write analysis is valid
+# Emulation of fcomi / fcomip should possibly raise FPU exceptions
+# Emulation of fucomi / fucomip should not
+# Full emulation will be available in miasm2 ;-)
 def fcomi(info, a):
-    # Invalid emulation
-    InvalidEmulation
+    cond = ExprOp('fcom', float_st0, a)
+    e = []
+    e.append(ExprAff(zf, ExprCond(cond, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
+    e.append(ExprAff(pf, ExprCond(cond, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
+    e.append(ExprAff(cf, ExprCond(cond, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
+    return e
 def fcomip(info, a):
-    # Invalid emulation
-    InvalidEmulation
-def fucomi(info, a):
-    # Invalid emulation
-    InvalidEmulation
-def fucomip(info, a):
-    # Invalid emulation, only read/write analysis is valid
     cond = ExprOp('fcomp', float_st0, a)
     e = []
     e.append(ExprAff(zf, ExprCond(cond, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
     e.append(ExprAff(pf, ExprCond(cond, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
     e.append(ExprAff(cf, ExprCond(cond, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
+    return e
+
+def fucom(info, a):
+    e = []
+    e.append(ExprAff(float_c0, ExprOp('fucom_c0', float_st0, a)))
+    e.append(ExprAff(float_c2, ExprOp('fucom_c2', float_st0, a)))
+    e.append(ExprAff(float_c3, ExprOp('fucom_c3', float_st0, a)))
+    e += set_float_cs_eip(info)
+    return e
+def fucomp(info, a):
+    e = fucom(info, a)
+    e += float_pop()
+    return e
+def fucompp(info):
+    e = fucomp(info, float_st1)
+    e += float_pop()
     return e
 
 def fcomp(info, a):
@@ -1734,15 +1783,7 @@ def fld(info, a):
     else:
         src = a
 
-    e= []
-    e.append(ExprAff(float_st7, float_st6))
-    e.append(ExprAff(float_st6, float_st5))
-    e.append(ExprAff(float_st5, float_st4))
-    e.append(ExprAff(float_st4, float_st3))
-    e.append(ExprAff(float_st3, float_st2))
-    e.append(ExprAff(float_st2, float_st1))
-    e.append(ExprAff(float_st1, float_st0))
-    e.append(ExprAff(float_st0, src))
+    e = float_push(src)
     e.append(ExprAff(float_stack_ptr, ExprOp('+', float_stack_ptr, ExprInt32(1))))
 
     e += set_float_cs_eip(info)
@@ -1761,19 +1802,25 @@ def fst(info, a):
 
 def fstp(info, a):
     e = fst(info, a)
-    e+=float_pop(a)
+    e += float_pop(a)
     return e
 
 def fist(info, a):
     e = []
     e.append(ExprAff(a, ExprOp('double_to_int_32', float_st0)))
-
     e += set_float_cs_eip(info)
     return e
 
 def fistp(info, a):
     e = fist(info, a)
-    e+=float_pop(a)
+    e += float_pop(a)
+    return e
+
+def fisttp(info, a):
+    e = []
+    e.append(ExprAff(a, ExprOp('double_to_int_32_with_truncation', float_st0)))
+    e += set_float_cs_eip(info)
+    e += float_pop(a)
     return e
 
 def fild(info, a):
@@ -1790,8 +1837,18 @@ def fldz(info):
 def fld1(info):
     return fld(info, ExprOp('int_32_to_double', ExprInt32(1)))
 
+def fldln2(info):
+    x = struct.pack('d', math.log(2))
+    x = struct.unpack('Q', x)[0]
+    return fld(info, ExprOp('mem_64_to_double', ExprInt64(x)))
+
 def fldl2e(info):
     x = struct.pack('d', 1/math.log(2))
+    x = struct.unpack('Q', x)[0]
+    return fld(info, ExprOp('mem_64_to_double', ExprInt64(x)))
+
+def fldl2t(info):
+    x = struct.pack('d', 1/math.log(10))
     x = struct.unpack('Q', x)[0]
     return fld(info, ExprOp('mem_64_to_double', ExprInt64(x)))
 
@@ -1799,6 +1856,38 @@ def fldlg2(info):
     x = struct.pack('d', math.log10(2))
     x = struct.unpack('Q', x)[0]
     return fld(info, ExprOp('mem_64_to_double', ExprInt64(x)))
+
+def fldpi(info):
+    x = struct.pack('d', math.pi)
+    x = struct.unpack('Q', x)[0]
+    return fld(info, ExprOp('mem_64_to_double', ExprInt64(x)))
+
+
+def fyl2x(info):
+    e = []
+    e.append(ExprAff(float_st1, ExprOp('fyl2x', float_st1, float_st0)))
+    e += float_pop()
+    return e
+
+def fyl2xp1(info):
+    e = []
+    e.append(ExprAff(float_st1, ExprOp('fyl2xp1', float_st1, float_st0)))
+    e += float_pop()
+    return e
+
+def fsincos(info):
+    e = []
+    e.append(ExprAff(float_st0, ExprOp('sin', float_st0)))
+    e.extend(float_push(ExprOp('cos', float_st0)))
+    return e
+
+def fdecstp(info):
+    return float_push(float_st7)
+
+def fincstp(info):
+    e = float_pop()
+    e.append(ExprAff(float_st7, float_st0))
+    return e
 
 
 def fadd(info, a, b = None):
@@ -1834,6 +1923,16 @@ def fninit(info):
     e += set_float_cs_eip(info)
     return e
 
+def ffree(info, a):
+    e = []
+    # XXX TODO tag word, ...
+    return e
+
+def ffreep(info, a):
+    e = ffree(info, a)
+    e += float_pop()
+    return e
+
 def fnstenv(info, a):
     e = []
     # XXX TODO tag word, ...
@@ -1861,6 +1960,18 @@ def fnstenv(info, a):
     e.append(ExprAff(ad, float_ds))
     return e
 
+def fldenv(info, a):
+    # TODO: real emulation rather than this one,
+    # which is sufficient for turbulence
+    e = []
+    e.append(ExprAff(float_control, a))
+    return e
+
+def fchs(info):
+    e = []
+    e.append(ExprAff(float_st0, ExprOp('fchs', float_st0)))
+    return e
+
 def fsub(info, a, b = None):
     if b == None:
         b = a
@@ -1871,6 +1982,20 @@ def fsub(info, a, b = None):
     else:
         src = b
     e.append(ExprAff(a, ExprOp('fsub', a, src)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fsubr(info, a, b = None):
+    # Invalid emulation
+    if b == None:
+        b = a
+        a = float_st0
+    e = []
+    if isinstance(b, ExprMem):
+        src = ExprOp('mem_%.2d_to_double'%b.get_size(), b)
+    else:
+        src = b
+    e.append(ExprAff(a, ExprOp('fdiv', src, a)))
     e += set_float_cs_eip(info)
     return e
 
@@ -1913,7 +2038,7 @@ def fdivr(info, a, b = None):
     e += set_float_cs_eip(info)
     return e
 
-def fdivp(info, a):
+def fdivp(info, a, b = None):
     # Invalid emulation
     if b == None:
         b = a
@@ -1928,7 +2053,22 @@ def fdivp(info, a):
     e += float_pop(a)
     return e
 
-def fmulp(info, a, b):
+def fdivrp(info, a, b = None):
+    # Invalid emulation
+    if b == None:
+        b = a
+        a = float_st0
+    e = []
+    if isinstance(b, ExprMem):
+        src = ExprOp('mem_%.2d_to_double'%b.get_size(), b)
+    else:
+        src = b
+    e.append(ExprAff(a, ExprOp('fdiv', src, a)))
+    e += set_float_cs_eip(info)
+    e += float_pop(a)
+    return e
+
+def fmulp(info, a, b = None):
     # Invalid emulation
     if b == None:
         b = a
@@ -1941,6 +2081,90 @@ def fmulp(info, a, b):
     e.append(ExprAff(float_prev(a), ExprOp('fmul', a, src)))
     e += set_float_cs_eip(info)
     e += float_pop(a)
+    return e
+
+def fsubp(info, a, b = None):
+    # Invalid emulation
+    if b == None:
+        b = a
+        a = float_st0
+    e = []
+    if isinstance(b, ExprMem):
+        src = ExprOp('mem_%.2d_to_double'%b.get_size(), b)
+    else:
+        src = b
+    e.append(ExprAff(float_prev(a), ExprOp('fsub', a, src)))
+    e += set_float_cs_eip(info)
+    e += float_pop(a)
+    return e
+
+def fsubrp(info, a, b = None):
+    # Invalid emulation
+    if b == None:
+        b = a
+        a = float_st0
+    e = []
+    if isinstance(b, ExprMem):
+        src = ExprOp('mem_%.2d_to_double'%b.get_size(), b)
+    else:
+        src = b
+    e.append(ExprAff(a, ExprOp('fdiv', src, a)))
+    e += set_float_cs_eip(info)
+    e += float_pop(a)
+    return e
+
+def fiadd(info, a):
+    r = float_st0
+    e = []
+    e.append(ExprAff(r, ExprOp('fiadd', r, a)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fisub(info, a):
+    r = float_st0
+    e = []
+    e.append(ExprAff(r, ExprOp('fisub', r, a)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fisubr(info, a):
+    r = float_st0
+    e = []
+    e.append(ExprAff(r, ExprOp('fisub', a, r)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fimul(info, a):
+    r = float_st0
+    e = []
+    e.append(ExprAff(r, ExprOp('fimul', r, a)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fidiv(info, a):
+    r = float_st0
+    e = []
+    e.append(ExprAff(r, ExprOp('fidiv', r, a)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fidivr(info, a):
+    r = float_st0
+    e = []
+    e.append(ExprAff(r, ExprOp('fidiv', a, r)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fcmovX(info, a):
+    # Invalid emulation
+    e = []
+    e.append(ExprAff(float_st0, ExprCond(zf, float_st1, float_st0)))
+    return e
+
+def fxam(info):
+    # Invalid emulation
+    e = []
+    e.append(ExprAff(float_c0, float_st0))
     return e
 
 def ftan(info, a):
@@ -1964,6 +2188,12 @@ def fxch(info, a):
     e += set_float_cs_eip(info)
     return e
 
+def fpatan(info):
+    e= []
+    e.append(ExprAff(float_st1, ExprOp('fatan', float_st1, float_st0)))
+    e += float_pop()
+    return e
+
 def fptan(info):
     e= []
     e.append(ExprAff(float_st7, float_st6))
@@ -1975,6 +2205,18 @@ def fptan(info):
     e.append(ExprAff(float_st1, ExprOp('ftan', float_st0)))
     e.append(ExprAff(float_st0, ExprOp('int_32_to_double', ExprInt32(1))))
     e.append(ExprAff(float_stack_ptr, ExprOp('+', float_stack_ptr, ExprInt32(1))))
+    return e
+
+def fprem(info):
+    e= []
+    e.append(ExprAff(float_st0, ExprOp('frem', float_st0, float_st1)))
+    e += set_float_cs_eip(info)
+    return e
+
+def fprem1(info):
+    e= []
+    e.append(ExprAff(float_st0, ExprOp('frem1', float_st0, float_st1)))
+    e += set_float_cs_eip(info)
     return e
 
 
@@ -2020,9 +2262,16 @@ def fabs(info):
     e += set_float_cs_eip(info)
     return e
 
+def frndint(info):
+    e = []
+    e.append(ExprAff(float_st0, ExprOp('frndint', float_st0)))
+    e += set_float_cs_eip(info)
+    return e
 
-def fnstsw(info):
-    dst = eax
+
+def fnstsw(info, a=eax):
+    # TODO: emulation is not valid
+    dst = a
     return [ExprAff(dst, ExprCompose([(ExprInt32(0), 0, 8),
                                       (float_c0,           8, 9),
                                       (float_c1,           9, 10),
@@ -2046,13 +2295,15 @@ def fldcw(info, a):
 def fwait(info):
     return []
 
-def nop(info):
+def nop(info, a=None):
+    # nop 0x90 has no argument
+    # nop 0x0f1f has one argument
     return []
 
 def hlt(info):
     e = []
     except_int = EXCEPT_PRIV_INSN
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'), ExprInt32(except_int)))
+    e.append(ExprAff(vm_exception_flags, ExprInt32(except_int)))
     return e
 
 def rdtsc(info):
@@ -2062,7 +2313,9 @@ def rdtsc(info):
     e.append(ExprAff(edx, tsc2))
     return e
 
-def cbw(info, a):
+def cbw(info):
+    # TODO: emulation is not valid
+    a = eax
     opmode, admode = info.opmode, info.admode
     if opmode == u16:
         s = 16
@@ -2076,15 +2329,33 @@ def cbw(info, a):
     int_cast = tab_uintsize[s]
 
     byte_h_0 = ExprInt(int_cast(0))
-    byte_h_f = ExprInt(int_cast(((1<<(s/2))-1)))
+    byte_h_f = ExprInt(int_cast(((1<<(s//2))-1)))
 
     mask = ExprCond(get_op_msb(src), byte_h_f, byte_h_0)
     e = []
-    e.append(ExprAff(a, ExprCompose([(a,    0, s/2),
-                                     (mask, s/2, s)])))
+    e.append(ExprAff(a, ExprCompose([(a,    0, s//2),
+                                     (mask, s//2, s)])))
+    return e
+
+def cwd(info):
+    # TODO: emulation is not valid
+    e = []
+    e.append(ExprAff(eax, edx))
+    e.append(ExprAff(edx, eax))
     return e
 
 # XXX TODO
+def aaa_stub(info, *arg):
+    e = []
+    e.append(ExprAff(eax[0:8], eax[0:8]))
+    e.append(ExprAff(nf, ExprInt32(0))) # sf
+    e.append(ExprAff(zf, ExprInt32(0)))
+    e.append(ExprAff(pf, ExprInt32(0)))
+    return e
+
+def das(info, ):
+    return []
+
 def daa(info):
     return []
 
@@ -2094,29 +2365,32 @@ def aam(info, a):
 def aad(info, a):
     return []
 
+def aas(info, ):
+    return []
+
 def aaa(info, ):
     return []
 
 def bsf(info, a, b):
     e = []
-    e.append(ExprAff(a, ExprOp('bsf', a, b)))
+    e.append(ExprAff(a, ExprOp('bsf', b)))
     e.append(ExprAff(zf, ExprCond(b, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
     return e
 
 def bsr(info, a, b):
     e = []
-    e.append(ExprAff(a, ExprOp('bsr', a, b)))
+    e.append(ExprAff(a, ExprOp('bsr', b)))
     e.append(ExprAff(zf, ExprCond(b, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
     return e
 
 def arpl(info, a, b):
     e= []
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'), ExprInt32(1<<7)))
+    e.append(ExprAff(vm_exception_flags, ExprInt32(1<<7)))
     return e
 
 def ins(info):
     e= []
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'), ExprInt32(1<<7)))
+    e.append(ExprAff(vm_exception_flags, ExprInt32(1<<7)))
     return e
 
 def sidt(info, a):
@@ -2124,17 +2398,17 @@ def sidt(info, a):
     if not isinstance(a, ExprMem) or a.size!=32:
       raise 'not exprmem 32bit instance!!'
     b = a.arg
-    print "DEFAULT SIDT ADDRESS %s!!"%str(a)
+    print("DEFAULT SIDT ADDRESS %s!!"%a)
     e.append(ExprAff(ExprMem(b, 32), ExprInt32(0xe40007ff)))
     e.append(ExprAff(ExprMem(ExprOp("+", b, ExprInt32(4)), 16), ExprInt32(0x8245)))
     return e
 
 
-def cmovz(info, a, b):
+def cmove(info, a, b):
     e= []
     e.append(ExprAff(a, ExprCond(zf, b, a)))
     return e
-def cmovnz(info, a, b):
+def cmovne(info, a, b):
     e= []
     e.append(ExprAff(a, ExprCond(zf, a, b)))
     return e
@@ -2145,6 +2419,10 @@ def cmovge(info, a, b):
 def cmovl(info, a, b):
     e= []
     e.append(ExprAff(a, ExprCond( ExprOp('^', nf, of) , b, a)))
+    return e
+def cmovg(info, a, b):
+    e= []
+    e.append(ExprAff(a, ExprCond( ExprOp('|', ExprOp('^', nf, of), zf) , a, b)))
     return e
 def cmovle(info, a, b):
     e= []
@@ -2157,6 +2435,10 @@ def cmova(info, a, b):
 def cmovae(info, a, b):
     e= []
     e.append(ExprAff(a, ExprCond( cf , a, b)))
+    return e
+def cmovb(info, a, b):
+    e= []
+    e.append(ExprAff(a, ExprCond( cf , b, a)))
     return e
 def cmovbe(info, a, b):
     e= []
@@ -2180,6 +2462,14 @@ def cmovns(info, a, b):
     # SF is called nf in miasm
     e.append(ExprAff(a, ExprCond(nf , a, b)))
     return e
+def cmovp(info, a, b):
+    e= []
+    e.append(ExprAff(a, ExprCond(pf , b, a)))
+    return e
+def cmovnp(info, a, b):
+    e= []
+    e.append(ExprAff(a, ExprCond(pf , a, b)))
+    return e
 
 #XXX
 def l_int(info, a):
@@ -2190,27 +2480,27 @@ def l_int(info, a):
     else:
         except_int = EXCEPT_PRIV_INSN
 
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'),
+    e.append(ExprAff(vm_exception_flags,
                      ExprInt32(except_int)))
     return e
 
 def l_sysenter(info):
     e= []
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'),
+    e.append(ExprAff(vm_exception_flags,
                      ExprInt32(EXCEPT_PRIV_INSN)))
     return e
 
 #XXX
 def l_out(info, a, b):
     e= []
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'),
+    e.append(ExprAff(vm_exception_flags,
                      ExprInt32(EXCEPT_PRIV_INSN)))
     return e
 
 #XXX
 def l_outs(info):
     e= []
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'),
+    e.append(ExprAff(vm_exception_flags,
                      ExprInt32(EXCEPT_PRIV_INSN)))
     return e
 
@@ -2229,6 +2519,15 @@ def cpuid(info):
     e.append(ExprAff(ebx, ExprOp('cpuid', eax, ExprInt32(1))))
     e.append(ExprAff(ecx, ExprOp('cpuid', eax, ExprInt32(2))))
     e.append(ExprAff(edx, ExprOp('cpuid', eax, ExprInt32(3))))
+    return e
+
+def prefetch(info, a):
+    # should not be swapped with cpuid, wrmsr, ...
+    return []
+
+def lgdt(info, a):
+    e = []
+    e.append(ExprAff(gdt, ExprMem(a, 48)))
     return e
 
 def bittest_get(a, b):
@@ -2293,23 +2592,42 @@ def into(info):
 
 def l_in(info, a, b):
     e = []
-    e.append(ExprAff(ExprId('vmcpu.vm_exception_flags'),
+    e.append(ExprAff(vm_exception_flags,
                      ExprInt32(EXCEPT_PRIV_INSN)))
     return e
 
-def cmpxchg(info, a, b, c):
+def cmpxchg(info, a, b):
     e = []
-
+    c = eax
+    if isinstance(b, ExprSlice): c = ExprSlice(c,b.start,b.stop)
     cond = a-c
-    e.append(ExprAff(zf, ExprCond(cond, ExprInt_from(zf, 0), ExprInt_from(zf, 1))))
+    e.append(ExprAff(zf, ExprCond(cond,
+                                 ExprInt_from(zf, 0),
+                                 ExprInt_from(zf, 1))))
     e.append(ExprAff(c, ExprCond(cond,
-                                 c,
-                                 b)
+                                 b,
+                                 c)
                      ))
     e.append(ExprAff(a, ExprCond(cond,
-                                 c,
-                                 a)
+                                 a,
+                                 b)
                      ))
+    return e
+
+def cmpxchg8b(info, a):
+    # TODO: emulation is not valid
+    e = []
+    e.append(ExprAff(a, ExprOp('concat',ecx,ebx)))
+    e.append(ExprAff(edx, a))
+    e.append(ExprAff(eax, a))
+    e.append(ExprAff(zf, ExprOp('comparison')))
+    return e
+
+def bound(info, a, b):
+    # TODO: emulation is not valid
+    e = []
+    e.append(ExprAff(vm_exception_flags, a))
+    e.append(ExprAff(vm_exception_flags, b))
     return e
 
 def lds(info, a, b):
@@ -2337,7 +2655,7 @@ def lahf(info):
     e = []
     args = []
     regs = [cf, ExprInt32(1), pf, ExprInt32(0), af, ExprInt32(0), zf, nf]
-    for i in xrange(len(regs)):
+    for i in range(len(regs)):
         args.append((regs[i],i, i+1))
     e.append(ExprAff(eax[8:16], ExprCompose(args)))
     return e
@@ -2377,13 +2695,47 @@ def l_str(info, a):
     e.append(ExprAff(a, ExprOp('load_tr_segment_selector', ExprInt32(0))))
     return e
 
-def movd(info, a, b):
+def rdrand(info, a):
     e = []
-    if a.get_size() == 64:
-        e.append(ExprAff(a, ExprCompose([(ExprInt32(0), 32, 64), (b, 0, 32)])))
-    else:
-        e.append(ExprAff(a, b[0:32]))
+    e.append(ExprAff(a, ExprOp('random')))
     return e
+
+def MMXkill(info, a, b, c=None):
+    # Generic and conservative emulation
+    if c is None: c = ExprInt32(0)
+    e = []
+    # kills dest and read operand registers
+    e.append(ExprAff(a, ExprOp('MMX', a, b, c)))
+    # kills flags
+    e.append(ExprAff(zf, ExprOp('MMX', zf)))
+    e.append(ExprAff(cf, ExprOp('MMX', cf)))
+    e.append(ExprAff(pf, ExprOp('MMX', pf)))
+    e.append(ExprAff(of, ExprOp('MMX', of)))
+    e.append(ExprAff(af, ExprOp('MMX', af)))
+    e.append(ExprAff(nf, ExprOp('MMX', nf)))
+    return e
+
+def MMXflags(info, a, b):
+    # Generic emulation for MMX instruction that modify the flags
+    e = []
+    e.append(ExprAff(zf, ExprOp('MMX', a, b)))
+    e.append(ExprAff(cf, ExprOp('MMX', a, b)))
+    e.append(ExprAff(pf, ExprOp('MMX', a, b)))
+    e.append(ExprAff(of, ExprInt32(0)))
+    e.append(ExprAff(af, ExprInt32(0)))
+    e.append(ExprAff(nf, ExprInt32(0)))
+    return e
+
+def MMXnoflags(info, a, b, c=None):
+    # Generic emulation for MMX instruction that does not touch the flags
+    if c is None: c = ExprInt32(0)
+    e = []
+    e.append(ExprAff(a, ExprOp('MMX', a, b, c)))
+    return e
+
+def ud2(info):
+    # Undefined instruction, simulated by a jmp to an invalid address
+    return [ ExprAff(eip, ExprInt32(-1)) ]
 
 mnemo_func = {'mov': mov,
               'xchg': xchg,
@@ -2409,7 +2761,7 @@ mnemo_func = {'mov': mov,
               'sar':sar,
               'shr':shr,
               'shrd_cl':shrd_cl,
-              'sal':sal,
+              'sal':shl,
               'shl':shl,
               'shld_cl':shld_cl,
               'shld':shld,
@@ -2477,15 +2829,19 @@ mnemo_func = {'mov': mov,
               'enter':enter,
               'jmp':jmp,
               'jmpf':jmpf,
-              'jz':jz,
-              'je':jz,
-              'jnz':jnz,
+              'jz':je,
+              'je':je,
+              'jnz':jne,
+              'jne':jne,
               'jp':jp,
               'jnp':jnp,
               'ja':ja,
               'jae':jae,
               'jb':jb,
+              'jnb':jae,
               'jbe':jbe,
+              'jc':jb,
+              'jnc':jae,
               'jg':jg,
               'jge':jge,
               'jl':jl,
@@ -2504,10 +2860,15 @@ mnemo_func = {'mov': mov,
               'idiv':idiv,
               'cdq':cdq,
               'cbw':cbw,
-              'daa':daa,
-              'aam':aam,
-              'aad':aad,
-              'aaa':aaa,
+              'cwde':cbw,
+              'cwd':cwd,
+              'daa':aaa_stub,
+              'aam':aaa_stub,
+              'aad':aaa_stub,
+              'aas':aaa_stub,
+              'aaa':aaa_stub,
+              'das':aaa_stub,
+              'daa':aaa_stub,
               'shrd':shrd,
               'stosb':stos,
               'stosw':stos,
@@ -2521,29 +2882,66 @@ mnemo_func = {'mov': mov,
               'fcomp':fcomp,
               'nop':nop,
               'fnop':nop, #XXX
+              'prefetcht0':prefetch,
+              'prefetcht1':prefetch,
+              'prefetcht2':prefetch,
+              'prefetchtnta':prefetch,
+              'prefetchw':prefetch, # Not in my Intel book
               'hlt':hlt,
               'rdtsc':rdtsc,
               'fst':fst,
               'fstp':fstp,
               'fist':fist,
               'fistp':fistp,
+              'fisttp':fisttp,
               'fld':fld,
+              'fldenv':fldenv,
               'fldz':fldz,
               'fld1':fld1,
+              'fldln2':fldln2,
               'fldl2e':fldl2e,
+              'fldl2t':fldl2t,
               'fldlg2':fldlg2,
+              'fldpi':fldpi,
+              'fyl2x':fyl2x,
+              'fyl2xp1':fyl2xp1,
+              'fsincos':fsincos,
               'fild':fild,
+              'fchs':fchs,
               'fadd':fadd,
+              'finit':fninit,
               'fninit':fninit,
               'faddp':faddp,
+              'fcmovb':fcmovX,
+              'fcmove':fcmovX,
+              'fcmovbe':fcmovX,
+              'fcmovu':fcmovX,
+              'fcmovnb':fcmovX,
+              'fcmovne':fcmovX,
+              'fcmovnbe':fcmovX,
+              'fcmovnu':fcmovX,
+              'fxam':fxam,
               'fsub':fsub,
+              'fsubr':fsubr,
+              'fsubp':fsubp,
+              'fsubrp':fsubrp,
               'fmul':fmul,
               'fmulp':fmulp,
               'fdiv':fdiv,
               'fdivr':fdivr,
               'fdivp':fdivp,
+              'fdivrp':fdivrp,
+              'fiadd':fiadd,
+              'fisub':fisub,
+              'fisubr':fisubr,
+              'fimul':fimul,
+              'fidiv':fidiv,
+              'fidivr':fidivr,
               'fxch':fxch,
+              'fpatan':fpatan,
               'fptan':fptan,
+              'fprem':fprem,
+              'fprem1':fprem1,
               'frndint':frndint,
               'fsin':fsin,
               'fcos':fcos,
@@ -2551,40 +2949,57 @@ mnemo_func = {'mov': mov,
               'f2xm1':f2xm1,
               'fsqrt':fsqrt,
               'fabs':fabs,
+              'frndint':frndint,
               'fnstsw':fnstsw,
               'fnstcw':fnstcw,
               'fldcw':fldcw,
               'fwait':fwait,
+              'wait':fwait,
               'fnstenv':fnstenv,
+              'ffree':ffree,
+              'ffreep':ffreep,
               'sidt':sidt,
               'arpl':arpl,
-              'cmovz':cmovz,
-              'cmove':cmovz,
-              'cmovnz':cmovnz,
+              'cmovz':cmove,
+              'cmove':cmove,
+              'cmovnz':cmovne,
+              'cmovne':cmovne,
+              'cmovg':cmovg,
               'cmovge':cmovge,
               'cmovnl':cmovge,
               'cmovl':cmovl,
               'cmova':cmova,
               'cmovae':cmovae,
+              'cmovb':cmovb,
               'cmovbe':cmovbe,
+              'cmovnb':cmovae,
               'cmovnge':cmovl,
+              'cmovnle':cmovg,
               'cmovle':cmovle,
               'cmovng':cmovle,
               'cmovo':cmovo,
               'cmovno':cmovno,
               'cmovs':cmovs,
               'cmovns':cmovns,
+              'cmovp':cmovp,
+              'cmovnp':cmovnp,
+              'cmovc':cmovb,
+              'cmovnc':cmovae,
               'int':l_int,
               'xlat': xlat,
               'bt':bt,
               'cpuid':cpuid,
+              'lgdt':lgdt,
               'jo': jo,
               'fcom':fcom,
               'ficom':ficom,
               'fcomi':fcomi,
               'fcomip':fcomip,
-              'fucomi':fucomi,
-              'fucomip':fucomip,
+              'fucomi':fcomi,
+              'fucomip':fcomip,
+              'fucom':fucom,
+              'fucomp':fucomp,
+              'fucompp':fucompp,
               'ins':ins,
               'btc':btc,
               'bts':bts,
@@ -2595,6 +3010,7 @@ mnemo_func = {'mov': mov,
               'out':l_out,
               "sysenter":l_sysenter,
               "cmpxchg":cmpxchg,
+              "cmpxchg8b":cmpxchg8b,
               "lds": lds,
               "les": les,
               "lss": lss,
@@ -2605,7 +3021,26 @@ mnemo_func = {'mov': mov,
               "fclex":fclex,
               "fnclex":fnclex,
               "str":l_str,
-              "movd":movd,
+              "comis#s#":MMXflags,
+              "ucomis#s#":MMXflags,
+              "movq":MMXnoflags,
+              "ud2":ud2,
+              "fxsave":nop,
+              "fxrstor":nop,
+              "ldmxcsr":nop,
+              "stmxcsr":nop,
+              "xsave":nop,
+              "xrstor":nop,
+              "xsaveopt":nop,
+              "clflush":nop,
+              "lfence":nop,
+              "mfence":nop,
+              "sfence":nop,
+              "rdrand":rdrand,
+              "movnti":mov,
+              "bound":bound,
+              'fincstp':fincstp,
+              'fdecstp':fdecstp,
               }
 
 
@@ -2634,6 +3069,9 @@ class ia32_rexpr:
 
     f32 = "f32"
     f64 = "f64"
+    f80 = "f80"
+    mm = "mm"
+    xmm = "xmm"
 
     im1 = "im1"
     im3 = "im3"
@@ -2688,6 +3126,15 @@ class ia32_rexpr:
     r_mm6 = mm6
     r_mm7 = mm7
 
+    r_xmm0 = xmm0
+    r_xmm1 = xmm1
+    r_xmm2 = xmm2
+    r_xmm3 = xmm3
+    r_xmm4 = xmm4
+    r_xmm5 = xmm5
+    r_xmm6 = xmm6
+    r_xmm7 = xmm7
+
     r_ax = r_eax[:16]
     r_cx = r_ecx[:16]
     r_dx = r_edx[:16]
@@ -2726,7 +3173,8 @@ class ia32_rexpr:
     reg_listdr=[r_dr0, r_dr1, r_dr2, r_dr3, r_dr4, r_dr5, r_dr6, r_dr7]
     reg_listcr=[r_cr0, r_cr1, r_cr2, r_cr3, r_cr4, r_cr5, r_cr6, r_cr7]
 
-    reg_mmx=   [r_mm0, r_mm1, r_mm2, r_mm3, r_mm4, r_mm5, r_mm6, r_mm7]
+    reg_mm =   [r_mm0, r_mm1, r_mm2, r_mm3, r_mm4, r_mm5, r_mm6, r_mm7]
+    reg_xmm=   [r_xmm0, r_xmm1, r_xmm2, r_xmm3, r_xmm4, r_xmm5, r_xmm6, r_xmm7]
 
     reg_flt = [float_st0, float_st1, float_st2, float_st3, float_st4, float_st5, float_st6, float_st7]
 
@@ -2741,6 +3189,21 @@ class ia32_rexpr:
         reg_dict[reg_flt[i]] = i
 
 
+def symb_to_Expr(s):
+    if len(s)==1:
+        myname = list(s.keys())[0]
+        if s[myname] == 1:
+            return ExprId(myname)
+    if len(s)==2:
+        name0, name1 = list(s.keys())
+        count = (s[name0], s[name1])
+        if count == (1, 1):
+            return ExprOp('+', ExprId(name0), ExprId(name1))
+        elif count == (-1, 1):
+            return ExprOp('-', ExprId(name1), ExprId(name0))
+        elif count == (1, -1):
+            return ExprOp('-', ExprId(name0), ExprId(name1))
+    raise ValueError("not impl symb %s"%s)
 
 def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set()):
     size = [x86_afs.u32, x86_afs.u08][modifs[w8]==True]
@@ -2750,12 +3213,12 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
     elif modifs[wd]:
         size = x86_afs.u16
 
-    tab32 = {ia32_rexpr.u08:ia32_rexpr.reg_list8, ia32_rexpr.u16:ia32_rexpr.reg_list16, ia32_rexpr.u32:ia32_rexpr.reg_list32,ia32_rexpr.f32:ia32_rexpr.reg_flt,ia32_rexpr.f64:ia32_rexpr.reg_flt}
+    tab32 = {ia32_rexpr.u08:ia32_rexpr.reg_list8, ia32_rexpr.u16:ia32_rexpr.reg_list16, ia32_rexpr.u32:ia32_rexpr.reg_list32,ia32_rexpr.f32:ia32_rexpr.reg_flt,ia32_rexpr.f64:ia32_rexpr.reg_flt, x86_afs.mm:ia32_rexpr.reg_mm, x86_afs.xmm:ia32_rexpr.reg_xmm}
     tab16 = {ia32_rexpr.u08:ia32_rexpr.reg_list8, ia32_rexpr.u16:ia32_rexpr.reg_list32, ia32_rexpr.u32:ia32_rexpr.reg_list16}
     ad_size = {ia32_rexpr.u08:ia32_rexpr.u08, ia32_rexpr.u16:ia32_rexpr.u16, ia32_rexpr.u32:ia32_rexpr.u32, ia32_rexpr.f32:ia32_rexpr.u32, ia32_rexpr.f64:ia32_rexpr.u32}
 
     if is_reg(d):
-        n = [x for x in d if type(x) in [int, long]]
+        n = [x for x in d if type(x) == int]
         if len(n)!=1:
             raise ValueError("bad reg! %s"%str(d))
         n = n[0]
@@ -2783,11 +3246,14 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
         if modifs[sd] is not None:
             t = tab32[size]
             n&=7
-        if modifs[mm] and n>0x7:
-            t = ia32_rexpr.reg_mmx
+        if modifs[mmx]:
+            if 0 <= n-x86_afs.reg_mm_base < 8:
+                t = ia32_rexpr.reg_mm
+            if 0 <= n-x86_afs.reg_xmm_base < 8:
+                t = ia32_rexpr.reg_xmm
             n&=7
 
-        out = t[n]
+        return t[n]
     elif is_imm(d):
         if ia32_rexpr.imm in d:
             #test bug imm 16b
@@ -2796,23 +3262,9 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
                     size = x86_afs.u32
                 else:
                     size = x86_afs.u16
-
-            #print d
-            out = ExprInt(tab_afs_int[size](d[ia32_rexpr.imm]))
+            return ExprInt(tab_afs_int[size](d[ia32_rexpr.imm]))
         if ia32_rexpr.symb in d:
-            if len(d[ia32_rexpr.symb])!=1:
-                raise "not impl symb diff 1:x",str(d[ia32_rexpr.symb])
-            myname = d[ia32_rexpr.symb].keys()[0]
-            myval = myname.offset
-            if myname.offset == None:
-                return ExprId(myname.name)
-
-
-            #XXX todo hack gen C
-            return ExprInt32(myval)
-            if type(myname)!=str:
-                return ExprId(myname.name)
-            return ExprInt32(myval)
+            return symb_to_Expr(d[ia32_rexpr.symb])
     elif is_address(d):
         int_cast = tab_afs_int[admode]
         #segm = None
@@ -2821,12 +3273,15 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
         segm = segm_dict[segm]
 
 
-        size = {ia32_rexpr.u08:8, ia32_rexpr.u16:16, ia32_rexpr.u32:32, ia32_rexpr.f32:32, ia32_rexpr.f64:64}[size]
+        msize = {ia32_rexpr.u08:8, ia32_rexpr.u16:16, ia32_rexpr.u32:32, ia32_rexpr.f32:32, ia32_rexpr.f64:64, ia32_rexpr.f80:80, ia32_rexpr.mm:64, ia32_rexpr.xmm:128}
         if ia32_rexpr.size in d:
             size = d[ia32_rexpr.size]
-        msize = {ia32_rexpr.u08:8, ia32_rexpr.u16:16, ia32_rexpr.u32:32, ia32_rexpr.f32:32, ia32_rexpr.f64:64}
         if size in msize:
             size = msize[size]
+        elif size == True:
+            pass
+        else:
+            raise ValueError("Size %r is invalid"%size)
         if ia32_rexpr.segm in d:
             pass
         out = []
@@ -2839,7 +3294,7 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
                     segm =  segm_dict[segm]
             elif k == ia32_rexpr.imm:
                 out.append(ExprInt(d[k]))
-            elif type(k) in [int, long]:
+            elif type(k) == int:
                 if d[k] ==1:
                     if admode == u16:
                         out.append(ia32_rexpr.reg_list16[k])
@@ -2852,8 +3307,9 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
                         out.append(ExprOp('*', ExprInt(int_cast(d[k])), ia32_rexpr.reg_list32[k]))
 
             elif k == ia32_rexpr.symb:
-                #print 'warning: symbol.. in mem look', d[k]
-                out.append(ExprId(str(d[k].items()[0][0].name)))
+                out.append(symb_to_Expr(d[ia32_rexpr.symb]))
+            elif k == 'txt':
+                pass
             else:
                 raise 'strange ad componoant: %s'%str(d)
         if not out:
@@ -2861,10 +3317,6 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
         e = out[0]
         for o in out[1:]:
             e = ExprOp('+', e, o)
-        out = ExprMem(e, size, segm)
+        return ExprMem(e, size, segm)
     else:
-        raise 'unknown arg %s'%str(d)
-    return out
-
-
-
+        raise ValueError('unknown arg %s'%d)

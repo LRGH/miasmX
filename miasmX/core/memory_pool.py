@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +18,7 @@
 #
 import array
 import struct
-import cPickle
-import StringIO
-from miasm.tools.modint import uint1, uint8, uint16, uint32, uint64
-
-from elfesteem import *
-
+from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
 
 class mempool:
     def gen_pad(x):
@@ -101,19 +97,20 @@ class mempool:
             f = open(f,"w")
         my_data = self.data
         self.data = self.data.tostring()
+        import cPickle
         cPickle.dump(self, f)
         self.data = my_data
     
-    @staticmethod
-
     def from_file(f):
         if type(f) is str:
             f = open(f,"r")
+        import cPickle
         m = cPickle.load(f)
         my_data = array.array('B')
         my_data.fromstring(m.data)
         m.data = my_data
         return m
+    from_file = staticmethod(from_file)
 
 class mempool_manager:
     def __init__(self, mems = []):
@@ -145,7 +142,7 @@ class mempool_manager:
         for m in self._mems:
             if x >=m.start and x <m.stop:
                 return m
-        raise 'unknown mem', str(x)
+        raise ValueError('unknown mem %s',x)
         
 
     def get_b(self, x):
@@ -156,7 +153,7 @@ class mempool_manager:
         m = self.get_mem_pool(x)
         try:
             return m.get_w(x)
-        except:
+        except ValueError:
             pass
         out = ""
         for i in xrange(2):
@@ -168,7 +165,7 @@ class mempool_manager:
         m = self.get_mem_pool(x)
         try:
             return m.get_d(x)
-        except:
+        except ValueError:
             pass
         out = ""
         for i in xrange(4):
@@ -180,7 +177,7 @@ class mempool_manager:
         m = self.get_mem_pool(x)
         try:
             return m.get_data(x,l)
-        except:
+        except ValueError:
             pass
         out = ""
         for i in xrange(l):
@@ -214,12 +211,11 @@ class mempool_manager:
             pass
         i = map(ord, struct.pack('L', int(v)))
         i.reverse()
-        print hex(int(x)), i
+        print("%x %s"%(int(x), i))
         for j in xrange(4):
             m = self.get_mem_pool(x+j)
-            print j, m
+            print("%s %s"%(j, m))
             m.set_b(x+j, i.pop())
-            print 'iii'
 
     def set_data(self, x, v):
         m = self.get_mem_pool(x)
@@ -239,8 +235,6 @@ class mempool_manager:
         for m in self._mems:
             m.to_file(f)
     
-    @staticmethod
-
     def from_file(f):
         if type(f) is str:
             f = open(f,"r")
@@ -251,6 +245,7 @@ class mempool_manager:
             except:
                 break
         return mempool_manager(mems)
+    from_file = staticmethod(from_file)
 
 
 def load_pe(e, loadhdr=False):

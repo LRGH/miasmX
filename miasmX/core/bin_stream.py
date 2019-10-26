@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications 2011-2017 (C) Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,21 +17,20 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 class bin_stream_mother(type):
-    def __call__(self, *arg):
-        if arg and arg[0].__class__ in [str]:
+    def __call__(self, *arg, **kargs):
+        if arg and hasattr(arg[0], 'upper'):
             cls = bin_stream_str
-        elif arg and type(arg[0]) is file:
+        elif arg and hasattr(arg[0], 'fileno'):
             cls = bin_stream_file
         else:
-            cls = bin_stream_x
+            cls = bin_stream_virt
 
         i = cls.__new__(cls, cls.__name__, cls.__bases__, cls.__dict__)
-        i.__init__(*arg)
+        i.__init__(*arg, **kargs)
         return i
 
-
-class bin_stream(object):
-    __metaclass__ = bin_stream_mother
+bin_stream_base = bin_stream_mother('bin_stream_base', (object,), {})
+class bin_stream(bin_stream_base):
     def __init__(self, *args, **kargs):
         pass
     def __repr__(self):
@@ -51,7 +51,7 @@ class bin_stream(object):
         return s[::step]
 
 class bin_stream_str(bin_stream):
-    def __init__(self, bin ="", offset = 0L):
+    def __init__(self, bin, offset = 0):
         if offset>len(bin):
             raise IOError
         self.bin = bin
@@ -70,6 +70,8 @@ class bin_stream_str(bin_stream):
         raise ValueError('writebs unsupported')
 
     def __str__(self):
+        raise AttributeError("Use pack() instead of str()")
+    def pack(self):
         out =  self.bin[self.offset:]
         return out
     def setoffset(self, val):
@@ -77,7 +79,7 @@ class bin_stream_str(bin_stream):
         self.offset = val
 
 class bin_stream_file(bin_stream):
-    def __init__(self, bin, offset=0L):
+    def __init__(self, bin, offset):
         self.bin = bin
         self.bin.seek(0, 2)
         self.l = self.bin.tell()
@@ -102,31 +104,36 @@ class bin_stream_file(bin_stream):
         return self.bin.write(l)
 
     def __str__(self):
+        raise AttributeError("Use pack() instead of str()")
+    def pack(self):
         return str(self.bin)
 
 
 
-class bin_stream_x(bin_stream):
-    def __init__(self, bin ="", offset = 0L):
-        if offset>bin.__len__():
+class bin_stream_virt(bin_stream):
+    def __init__(self, virt, offset = 0, section = None):
+        if offset>virt.__len__():
             raise IOError
-        self.bin = bin
+        self.virt = virt
         self.offset = offset
-        self.l = bin.__len__()
-        if "is_addr_in" in self.bin.__class__.__dict__:
-            self.is_addr_in = lambda ad:self.bin.is_addr_in(ad)
+        self.section = section
+        self.l = virt.__len__()
+        if "is_addr_in" in self.virt.__class__.__dict__:
+            self.is_addr_in = lambda ad:self.virt.is_addr_in(ad)
 
     def readbs(self, l=1):
         if self.offset+l>self.l:
             raise IOError
         self.offset+=l
-        return self.bin(self.offset-l,self.offset)
+        return self.virt(self.offset-l,self.offset,section=self.section)
 
     def writebs(self, l=1):
         raise ValueError('writebs unsupported')
 
     def __str__(self):
-        out =  self.bin[self.offset:]
+        raise AttributeError("Use pack() instead of str()")
+    def pack(self):
+        out =  self.virt[self.offset:]
         return out
     def setoffset(self, val):
         val = val & 0xFFFFFFFF

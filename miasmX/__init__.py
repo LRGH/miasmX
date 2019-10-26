@@ -17,4 +17,4 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-__all__ = ['core/asmbloc', 'core/parse_asm', 'core/bin_stream', 'tools/pe_helper' ]
+__all__ = ['core/bin_stream' ]

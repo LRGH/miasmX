@@ -1,27 +1,52 @@
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
+
 import os
+try:
+    # Needed for compatibility with python2.3
+    from plasmasm.python.compatibility import one
+except ImportError:
+    one = 1
 
 class moduint(object):
     def __init__(self, arg):
         if isinstance(arg, moduint):
             arg = arg.arg
-        self.arg = arg%self.__class__.limit
+        self.arg = int(arg)%self.__class__.limit
         assert(self.arg >= 0 and self.arg < self.__class__.limit)
     def __repr__(self):
-        return self.__class__.__name__+'('+hex(self.arg)+')'
+        val = hex(self.arg)
+        if self.arg.__class__.__name__ == 'long':
+            val = val.lower()[:-1]
+        return self.__class__.__name__+'('+val+')'
     def __hash__(self):
         return hash(self.arg)
-    @classmethod
     def maxcast(c1, c2):
         c2 = c2.__class__
         if c1.size > c2.size:
             return c1
         else:
             return c2
-    def __cmp__(self, y):
+    maxcast = classmethod(maxcast)
+    # Comparison operators: only __eq__ and __lt__ are available in python 3
+    # The other comparison operators are needed for python 2
+    def __eq__(self, y):
         if isinstance(y, moduint):
-            return cmp(self.arg, y.arg)
+            return self.arg == y.arg
         else:
-            return cmp(self.arg, y)
+            return self.arg == y
+    def __lt__(self, y):
+        if isinstance(y, moduint):
+            return self.arg < y.arg
+        else:
+            return self.arg < y
+    def __ne__(self, y):
+           return not (self==y)
+    def __le__(self, y):
+           return (self==y or self<y)
+    def __gt__(self, y):
+           return not (self==y or self<y)
+    def __ge__(self, y):
+           return not (self<y)
     def __add__(self, y):
         if isinstance(y, moduint):
             cls = self.maxcast(y)
@@ -143,56 +168,55 @@ class modint(moduint):
     def __init__(self, arg):
         if isinstance(arg, moduint):
             arg = arg.arg
-        a = arg%self.__class__.limit
+        a = int(arg)%self.__class__.limit
         if a >= self.__class__.limit/2:
             a -= self.__class__.limit
         self.arg = a
         assert(self.arg >= -self.__class__.limit/2 and self.arg < self.__class__.limit)
 
-
 class uint1(moduint):
     size = 1
-    limit = 1<<size
+    limit = one<<size
 
 class uint8(moduint):
     size = 8
-    limit = 1<<size
+    limit = one<<size
 
 class uint16(moduint):
     size = 16
-    limit = 1<<size
+    limit = one<<size
 
 class uint32(moduint):
     size = 32
-    limit = 1<<size
+    limit = one<<size
 
 class uint64(moduint):
     size = 64
-    limit = 1<<size
+    limit = one<<size
 
 class uint128(moduint):
     size = 128
-    limit = 1<<size
+    limit = one<<size
 
 class int8(modint):
     size = 8
-    limit = 1<<size
+    limit = one<<size
 
 class int16(modint):
     size = 16
-    limit = 1<<size
+    limit = one<<size
 
 class int32(modint):
     size = 32
-    limit = 1<<size
+    limit = one<<size
 
 class int64(modint):
     size = 64
-    limit = 1<<size
+    limit = one<<size
 
 class int128(modint):
     size = 128
-    limit = 1<<size
+    limit = one<<size
 
 
 
@@ -207,12 +231,12 @@ if __name__ == "__main__":
     f = uint8(0x1)
 
 
-    print a, b, c
-    print a+b, a+c, b+c
-    print a == a, a == b, a == 0x42, a == 0x78
-    print a != b, a != a
-    print d, e
-    print d+e, d+d, e+e, e+e+e, e+0x11
+    print(a, b, c)
+    print(a+b, a+c, b+c)
+    print(a == a, a == b, a == 0x42, a == 0x78)
+    print(a != b, a != a)
+    print(d, e)
+    print(d+e, d+d, e+e, e+e+e, e+0x11)
 
     assert(f == 1)
     assert(f+1 == 2)
@@ -251,6 +275,6 @@ if __name__ == "__main__":
     assert(0^f==f)
     assert(1^f==0)
 
-    print e+c, c+e, c-e, e-c
-    print 1000*a
-    print hex(a)
+    print(e+c, c+e, c-e, e-c)
+    print(1000*a)
+    print(hex(a))

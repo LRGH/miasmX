@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,19 +16,23 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasm.expression.expression import *
+from miasmX.expression.expression import *
 import struct
 import logging
-import cPickle
-from miasm.expression.expression_helper import *
+from miasmX.expression.expression_helper import *
+
+try:
+    # Needed for compatibility with python2.3
+    from plasmasm.python.compatibility import sorted
+except ImportError:
+    pass
 
 
 
-
-mymaxuint = {8:0xFFL,
-             16:0xFFFFL,
-             32:0xFFFFFFFFL,
-             64:0xFFFFFFFFFFFFFFFFL
+mymaxuint = {8:0xFF,
+             16:0xFFFF,
+             32:0xFFFFFFFF,
+             64:0xFFFFFFFFFFFFFFFF
              }
 
 
@@ -56,7 +61,7 @@ tab_u2i = {uint8:int8,
            uint16:int16,
            uint32:int32}
 
-class mpool():
+class mpool(object):
     def __init__(self):
         self.pool_id = {}
         self.pool_mem = {}
@@ -70,10 +75,10 @@ class mpool():
         if not isinstance(a, ExprMem):
             return self.pool_id.__getitem__(a)
         if not a.arg in self.pool_mem:
-            raise KeyError, a
+            raise KeyError(a)
         m = self.pool_mem.__getitem__(a.arg)
         if m[0].get_size() != a.get_size():
-            raise KeyError, a
+            raise KeyError(a)
         return m[1]
     def __setitem__(self, a, v):
         if not isinstance(a, ExprMem):
@@ -110,7 +115,7 @@ class eval_abs:
         }
 
     def parity(self, a):
-        tmp = (a)&0xFFL
+        tmp = (a)&0xFF
         cpt = 1
         while tmp!=0:
             cpt^=tmp&1
@@ -119,14 +124,14 @@ class eval_abs:
 
     def my_bsf(self, a, default_val=0):
         tmp = 0
-        for i in xrange(32):
+        for i in range(32):
             if a & (1<<i):
                 return i
 
         return default_val
     def my_bsr(self, a, op_size, default_val = 0):
         tmp = 0
-        for i in xrange(op_size-1, -1, -1):
+        for i in range(op_size-1, -1, -1):
             if a & (1<<i):
                 return i
 
@@ -151,13 +156,13 @@ class eval_abs:
         if type(f) is str:
             f = open(f,"w")
         self.log = None
+        import cPickle
         cPickle.dump(self, f)
-
-    @staticmethod
 
     def from_file(f, g):
         if type(f) is str:
             f = open(f,"r")
+        import cPickle
         m = cPickle.load(f)
         log = logging.getLogger("expr_eval_int")
         console_handler = logging.StreamHandler()
@@ -175,7 +180,7 @@ class eval_abs:
                 xx = x
 
             xx = x
-            print repr(g[str(xx)]), g[str(xx)]
+            print("%r %s"%(g[str(xx)], g[str(xx)]))
 
             if isinstance(m.pool[x], Expr):
                 new_pool[g[str(xx)]] = m.pool[x].replace_expr(g)
@@ -184,6 +189,7 @@ class eval_abs:
 
         m.pool = new_pool
         return m
+    from_file = staticmethod(from_file)
 
     def find_mem_by_addr(self, e):
         if e in self.pool.pool_mem:
@@ -282,10 +288,10 @@ class eval_abs:
         # suppose max mem size is 64 bytes, compute all reachable addresses
         to_test = []
         #comp = {}
-        #print "FINDING", e
-        for i in xrange(-7, e.size/8):
+        #print("FINDING %s" % e)
+        for i in range(-7, e.size//8):
             ex = expr_simp(self.eval_expr(e.arg + ExprInt(uint32(i)), eval_cache))
-            #print i, ex
+            #print("%s %s"%(i, ex))
             to_test.append((i, ex))
 
         for i, x in to_test:
@@ -294,18 +300,18 @@ class eval_abs:
 
             ex = expr_simp(self.eval_expr(e.arg - x, eval_cache))
             if not isinstance(ex, ExprInt):
-                fds
+                raise ValueError("%s should be ExprInt instead of %s"%(ex,ex.__class__.__name__))
             ptr_diff = int32(ex.arg)
-            #print 'ptrdiff', ptr_diff, i
+            #print("ptrdiff %s %s'%(ptr_diff, i))
             if ptr_diff >= self.pool.pool_mem[x][1].get_size()/8:
-                #print "too long!"
+                #print("too long!")
                 continue
             ov.append((i, self.pool.pool_mem[x][0]))
         #"""
         """
-        print ov
+        print(ov)
         if len(ov)>0:
-            print "XXXX", [(x[0], str(x[1])) for x in ov]
+            print("XXXX %s" % [(x[0], str(x[1])) for x in ov])
         """
         return ov
 
@@ -375,7 +381,7 @@ class eval_abs:
         ret_value =  big/c
         try:
             ret_value = tab_u2i[cast_int](ret_value)
-        except:
+        except ValueError:
             raise ValueError('Divide Error')
         return ret_value
 
@@ -390,7 +396,7 @@ class eval_abs:
         ret_value =  big/c
         try:
             ret_value = tab_u2i[cast_int](ret_value)
-        except:
+        except ValueError:
             raise ValueError('Divide Error')
         ret_value = big-ret_value*c
         return ret_value
@@ -503,14 +509,7 @@ class eval_abs:
         return ret_value
 
     def eval_op_int_32_to_double(self, args, op_size, cast_int):
-        print args[0]
-        return ExprTop()
-        b = struct.pack('L', args[0])
-        print repr(b)
-        b = struct.unpack('f', b)[0]
-        print b
-        raise ValueError('not impl yet')
-        ret_value = args[0]
+        ret_value, = struct.unpack('f', struct.pack('I', args[0]))
         return ret_value
 
     def objbyid_default0(self, args, op_size, cast_int):
@@ -634,9 +633,9 @@ class eval_abs:
                     for sa, sb in missing_slice:
                         ptr = expr_simp(a_val + ExprInt32(sa/8))
                         out.append((ExprMem(ptr, size = sb-sa), sa, sb))
-                    out.sort(key=lambda x:x[1])
+                    out = sorted(out, key=lambda x:x[1])
                     #for e, sa, sb in out:
-                    #    print str(e), sa, sb
+                    #    print("%s %s %s"%(e, sa, sb))
                     ee = ExprSlice(ExprCompose(out), 0, a.get_size())
                     ee = expr_simp(ee)
                     return ee
@@ -774,7 +773,7 @@ class eval_abs:
             return uu
 
         if not is_int:
-            rez = 0L
+            rez = 0
             total_bit = 0
 
             for xx, start, stop in args:
@@ -806,7 +805,7 @@ class eval_abs:
 
 
 
-        rez = 0L
+        rez = 0
         total_bit = 0
         for xx, start, stop in args:
             a = xx.arg
@@ -907,12 +906,16 @@ class eval_abs:
 
 
     def dump_id(self):
-        ids = self.pool.pool_id.keys()
+        ids = list(self.pool.pool_id.keys())
         ids.sort()
+        ret = []
         for i in ids:
-            print i, self.pool.pool_id[i]
+            ret += [ "%s %s"%(i, self.pool.pool_id[i]) ]
+        return ret
     def dump_mem(self):
-        mems = self.pool.pool_mem.values()
+        mems = list(self.pool.pool_mem.values())
         mems.sort()
+        ret = []
         for m, v in mems:
-            print m, v
+            ret += [ "%s %s"%(m, v) ]
+        return ret

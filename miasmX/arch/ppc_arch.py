@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,19 +19,19 @@
 import shlex
 import struct
 
-from miasm.core.bin_stream import bin_stream
+from miasmX.core.bin_stream import bin_stream
 
 
 def hex2bin(op):
     out = []
-    for i in xrange(31, -1, -1):
+    for i in range(31, -1, -1):
         out.append(str((op>>i)&1))
-    for i in xrange(32, -1,  -4):
+    for i in range(32, -1,  -4):
         out[i:i] = ' '
     return "".join(out)
 
 def myrol(v, r):
-    return ((v&0xFFFFFFFFL)>>r)  | ((v << (32-r))&0xFFFFFFFFL)
+    return ((v&0xFFFFFFFF)>>r)  | ((v << (32-r))&0xFFFFFFFF)
 
 def str2imm(i):
     if i.startswith('0x') or i.startswith('-0x'):
@@ -39,12 +40,12 @@ def str2imm(i):
         d = 10
     try:
         a = int(i, d)
-    except:
+    except ValueError:
         return False
     return a
 
 def imm2str(i):
-    if type(i) in [int, long]:
+    if type(i) == int:
         if i<0:
             return "-0x%x"%-i
         else:
@@ -56,7 +57,7 @@ def is_imm(i):
 
 class bm_meta(type):
     def __new__(cls, name, bases, odct):
-        if name is "bm":
+        if name in ["bm","bm_base"]:
             return type.__new__(cls, name, bases, odct)
         dct = {'fbits':None, 'l':None, "p_property":[], "checkinv" : False}
         dct.update(odct)
@@ -103,9 +104,8 @@ class bm_meta(type):
             dct["set_"+p] = lambda self, p=p:setattr(self, p)
         return type.__new__(cls, name, bases, dct)
 
-
-class bm(object):
-    __metaclass__ = bm_meta
+bm_base = bm_meta('bm_base', (object,), {})
+class bm(bm_base):
     def __init__(self, parent, off, set_at = True):
         self.parent = parent
         self.off = off-self.l
@@ -144,7 +144,7 @@ class bm(object):
 
 
 all_bm_int = []
-for i in xrange(0x40):
+for i in range(0x40):
     mask_str = hex2bin(i).replace(' ', '')[26:]
     while mask_str:
         bstr = "bm_int"+mask_str
@@ -160,9 +160,8 @@ class bm_set_meta(type):
             odct['l'] = 9
         return type.__new__(cls, name, bases, odct)
 
-
-class bm_set(object):
-    __metaclass__ = bm_set_meta
+bm_set_base = bm_set_meta('bm_set_base', (object,), {})
+class bm_set(bm_set_base):
     def __init__(self, parent, off):
         self.parent = parent
         self.off = 32-off-self.l
@@ -295,7 +294,7 @@ class bm_reglist(bm):
     def parse(self, v):
         val = self.get_val(v)
         self.reglist = []
-        for i in xrange(0x10):
+        for i in range(0x10):
             if val & (1<<i):
                 self.reglist.append(i)
         return True
@@ -424,30 +423,28 @@ class bm_rdl(bm):
 class ppc_mnemo_metaclass(type):
     global tab_mn
     def __call__(cls, op, offset = 0):
-        if type(op) in [int, long]:
+        if op.__class__.__name__ in ['int', 'long']:
             cls = cls.class_from_op(op)
             i = cls.__new__(cls)
             i.__init__(op, offset)
-        elif type(op) is str:
+        elif op.__class__.__name__ == 'str':
             cls = cls.asm(op)
             i = cls.__new__(cls)
             i.__init__(op, 0, False)
         else:
-            raise ValueError('zarb arg')
+            raise ValueError('zarb arg', op.__class__.__name__)
         return i
 
     def class_from_op(cls, op):
-        ret = filter(lambda x:x.check(op), tab_mn)
+        ret = [ x for x in tab_mn if x.check(op) ]
         if len(ret)==1:
             return ret[0]
         raise ValueError('ambiquity %s'%str(ret))
 
 
-    def dis(cls, bin, attrib = {}):
+    def dis(cls, bin, *kargs):
         if type(bin) == str:
             bin = bin_stream(bin)
-        elif not isinstance(bin, bin_stream):
-            raise ValueError('unknown input')
 
         op = bin.readbs(4)
         op = struct.unpack('>L', op)[0]
@@ -455,7 +452,7 @@ class ppc_mnemo_metaclass(type):
 
 
     def asm(cls, txt, symbol_reloc_off = []):
-        print txt
+        print(txt)
         t = ppc_mn.pre_parse_mnemo(txt)
         name = t.pop()
         ret = filter(lambda x:x.check_mnemo(name), tab_mn)
@@ -468,7 +465,7 @@ class ppc_mnemo_metaclass(type):
 
     def __new__(cls, name, bases, dct):
         ret_c = type.__new__(cls, name, bases, dct)
-        if name is "ppc_mn":
+        if name in [ "ppc_mn", "ppc_mn_base"] :
             return ret_c
 
         mask = []
@@ -561,25 +558,20 @@ class ppc_mnemo_metaclass(type):
         t.reverse()
         return [], t[0], t[1:]
 
-    def parse_address(self, a):
-        return parse_ad(a)
-    def prefix2hex(self, p):
-        return ""
-
-regs_str = ['R%d'%r for r in xrange(0x20)]
+regs_str = ['R%d'%r for r in range(0x20)]
 regs_str[1] = 'SP'
 
-cop_str = ['P%d'%r for r in xrange(0x10)]
-copr_str = ['C%d'%r for r in xrange(0x10)]
+cop_str = ['P%d'%r for r in range(0x10)]
+copr_str = ['C%d'%r for r in range(0x10)]
 
 crb_str = []
-for i in xrange(0x8):
+for i in range(0x8):
     for x in ['LT', 'GT', 'EQ', 'SO']:
         crb_str.append('CR%d_%s'%(i, x))
 
-cr_str = ['CR%d'%r for r in xrange(0x8)]
-fpr_str = ['FP%d'%r for r in xrange(0x20)]
-spr_str = ['SPR%d'%r for r in xrange(0x400)]
+cr_str = ['CR%d'%r for r in range(0x8)]
+fpr_str = ['FP%d'%r for r in range(0x20)]
+spr_str = ['SPR%d'%r for r in range(0x400)]
 spr_str[256] = 'LR'
 spr_str[392] = 'BL'
 spr_str[424] = 'BU'
@@ -589,25 +581,17 @@ spr_str[529] = 'IC_CSR'
 spr_str[964] = 'ICTRL'
 spr_str[288] = 'CTR'
 
-sr_str = ['SR%d'%r for r in xrange(0x10)]
+sr_str = ['SR%d'%r for r in range(0x10)]
 
 all_regs = regs_str+cop_str+copr_str+cr_str+crb_str+fpr_str+spr_str
 
-from ia32_reg import x86_afs
+from miasmX.arch.ia32_reg import x86_afs
 
 
 def is_symbol(a):
     if is_imm(a) or a in all_regs:
         return False
     return True
-
-def parse_ad(a):
-    a = a.strip()
-    if is_symbol(a):
-        print 'SYMBOL!', a
-        return {x86_afs.symb:{a:1}}
-    else:
-        return {0x1337:1}
 
 
 def reg2str(r):
@@ -727,10 +711,9 @@ def args2str(args):
     return arglist2str(args2reduce(args))
 
 
-class ppc_mn(object):
+ppc_mn_base = ppc_mnemo_metaclass('ppc_mn_base', (object,), {})
+class ppc_mn(ppc_mn_base):
     mask_list = []
-    __metaclass__ = ppc_mnemo_metaclass
-
 
     def gen_args2str(self):
         args = []
@@ -780,14 +763,11 @@ class ppc_mn(object):
                 if not is_symbol(a) or a in bm_cond.n:
                     mnemo_nosymb.append(a)
                     continue
-                print "WARNING asm symb", a
+                print("WARNING asm symb %s"%a)
                 mnemo_nosymb.append("0")
             full_mnemo = mnemo_nosymb
 
             self.parse_args(full_mnemo)
-
-    def get_attrib(self):
-        return {}
 
     def parse_opts(self, rest):
         if rest:
@@ -1048,7 +1028,7 @@ class ppc_b(ppc_mn):
 
     def args2str(self):
         args = []
-        if type(self.li) in [int, long]:
+        if type(self.li) == int:
             args.append(imm2str(self.li<<2))
         else:
             args.append(str(self.li))
@@ -1077,13 +1057,13 @@ class ppc_b(ppc_mn):
         return True
 
     def getdstflow(self):
-        if type(self.li) in [int, long]:
+        if type(self.li) == int:
             li = self.li<<2
             if li &(0x1<<25):
                 li |=0xFF000000
             li = struct.unpack('L', struct.pack('L', li))[0]
             if self.aa:
-                print "absolute jmp! default abs ad  0"
+                print("absolute jmp! default abs ad  0")
                 dst = (li)&0xFFFFFFFF
             else:
                 dst = (self.offset+(li))&0xFFFFFFFF
@@ -1226,7 +1206,7 @@ class ppc_bc(ppc_mn):
                 pass
         if self.bi>>2:
             args.append(cr2str(self.bi>>2))
-        if type(self.bd) in [int, long]:
+        if type(self.bd) == int:
             args.append(imm2str(self.bd<<2))
         else:
             args.append(str(self.bd))
@@ -1265,7 +1245,7 @@ class ppc_bc(ppc_mn):
         return True
 
     def getdstflow(self):
-        if type(self.bd) in [int, long]:
+        if type(self.bd) == int:
             li = self.bd<<2
             if li &(0x1<<15):
                 li |=0xFFFF0000
@@ -2150,7 +2130,7 @@ if __name__ == "__main__":
     for op in [0x7D4A5214, 0x7FAA4A14, 0x7D615A14]:
 
         m = ppc_mn(op)
-        print m
+        print(m)
 
 
     txt = """
@@ -2276,22 +2256,22 @@ if __name__ == "__main__":
 
     txt = txt.split('\n')[1:]
     for t in txt:
-        print "___%s___"%t
+        print("___%s___"%t)
         op1 = ppc_mn.asm(t)[0]
         h = struct.unpack('>L', op1)
-        print "bin: %.8X"%h
+        print("bin: %.8X"%h)
         m = ppc_mn.dis(op1)
-        print "dis:", str(m)
+        print("dis: %s"%m)
         token_a = [x for x in shlex.shlex(t)]
         token_b = [x for x in shlex.shlex(str(m))]
         token_a = filter(lambda x:not x in ['-', ',', 'CR0'] and not is_imm(x), token_a)
         token_b = filter(lambda x:not x in ['-', ',', 'CR0'] and not is_imm(x), token_b)
-        print token_a
-        print token_b
+        print(token_a)
+        print(token_b)
 
         op2 = ppc_mn.asm(str(m))[0]
         h = struct.unpack('>L', op2)
-        print "%.8X"%h
+        print("%.8X"%h)
         if op1 !=op2 or (token_a != token_b and not token_b[0] in ['BLE', 'ADDI', 'LI', 'ADDIS', 'LIS']):
             raise ValueError('bug in self test', t)
 

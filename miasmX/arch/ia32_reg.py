@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,10 +41,12 @@ class afs_desc:
         self.s32 = "s32"
         self.s64 = "s64"
         self.u64 = "u64"
+        self.mm  = "mm"
+        self.xmm = "xmm"
 
         self.f32 = "f32"
         self.f64 = "f64"
-        self.fpu = "fpu"
+        self.f80 = "f80"
         
         self.im1 = "im1"
         self.im3 = "im3"
@@ -134,7 +137,12 @@ class afs_desc:
 
         self.reg_flt =  ["st%d"%i for i in range(8)]
 
-        self.reg_mmx =  ["mm%d"%i for i in range(8)]
+        self.reg_mm  =  ["mm%d"%i for i in range(8)]
+
+        self.reg_xmm =  ["xmm%d"%i for i in range(16)]
+
+        self.reg_mm_base  = 0x40
+        self.reg_xmm_base = 0x50
 
         self.reg_dict = {}
         for i in range(8):
@@ -145,6 +153,10 @@ class afs_desc:
             self.reg_dict[self.reg_list32[i]] = i
         for i in range(8):
             self.reg_dict[self.reg_flt[i]] = i
+        for i in range(8):
+            self.reg_dict[self.reg_mm[i]]  = i+self.reg_mm_base
+        for i in range(16):
+            self.reg_dict[self.reg_xmm[i]] = i+self.reg_xmm_base
         for i in range(8):
             self.reg_dict[self.reg_cr[i]] = i+0x100
         for i in range(8):

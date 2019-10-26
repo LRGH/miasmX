@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +16,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasm.tools.modint import uint1, uint8, uint16, uint32, uint64
-from miasm.tools.modint import int8, int16, int32, int64
+from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
+from miasmX.tools.modint import moduint, int8, int16, int32, int64
+try:
+    # Needed for compatibility with python2.3
+    from plasmasm.python.compatibility import set, sorted
+except ImportError:
+    pass
 tip = 'tip'
 
 def slice_rest(size, start, stop):
@@ -42,12 +48,13 @@ tab_int_size = {uint8:8,
                 uint64:64
                 }
 
-my_size_mask = {1:1, 8:0xFF, 16:0xFFFF, 32:0xFFFFFFFF,  64:0xFFFFFFFFFFFFFFFFL}
+my_size_mask = {1:1, 8:0xFF, 16:0xFFFF, 32:0xFFFFFFFF,  64:0xFFFFFFFFFFFFFFFF}
 
 
 def is_int(a):
-    t = [uint1, uint8, uint16, uint32, uint64]
-    return any([isinstance(a, x) for x in t])
+    for t in [uint1, uint8, uint16, uint32, uint64]:
+        if isinstance(a, t): return True
+    return False
 
 
 
@@ -67,7 +74,7 @@ def get_missing_interval(all_intervals, i_min = 0, i_max = 32):
 
 def visit_chk(visitor):
     def wrapped(e, cb):
-        #print 'visit', e
+        #print('visit %s' % e)
         e_new = visitor(e, cb)
         e_new2 = cb(e_new)
         return e_new2
@@ -84,8 +91,7 @@ class Expr:
         return str(self.arg)
     def __getitem__(self, i):
         if not isinstance(i, slice):
-            print i
-            raise "bad slice"
+            raise ValueError("bad slice %s"%i)
         start, stop, step = i.indices(self.get_size())
         return ExprSlice(self, start, stop)
     def get_r(self, mem_read=False):
@@ -99,8 +105,7 @@ class Expr:
     def __ne__(self, a):
         return not self.__eq__(a)
     def toC(self):
-        print self
-        fdsfs
+        raise ValueError("%s"%self)
         return self.arg.toC()
     def __add__(self, a):
         return ExprOp('+', self, a)
@@ -173,14 +178,14 @@ class ExprTop(Expr):
 
 class ExprInt(Expr):
     def __init__(self, arg):
-        if not is_int(arg):
-            raise 'arg must by numpy int! %s'%str(arg)
+        if not isinstance(arg, moduint):
+            raise ValueError('arg %s should be a modint'%arg)
         self.arg = arg
     def __str__(self):
-        if self.arg < 0:
-            return str("-0x%X"%-int(self.arg&0xffffffffffffffffL))
+        if int(self.arg) < 0:
+            return str("-0x%X"%-int(self.arg&0xffffffffffffffff))
         else:
-            return str("0x%X"%int(self.arg&0xffffffffffffffffL))
+            return str("0x%X"%int(self.arg&0xffffffffffffffff))
     def get_r(self, mem_read=False):
         return set()
     def get_w(self):
@@ -196,19 +201,20 @@ class ExprInt(Expr):
     def __hash__(self):
         return hash(self.arg)
     def __repr__(self):
-        return Expr.__repr__(self)[:-1]+" 0x%X>"%int(self.arg&0xffffffffffffffffL)
+        return Expr.__repr__(self)[:-1]+" 0x%X>"%int(self.arg&0xffffffffffffffff)
     def toC(self):
         return str(self)
-    @visit_chk
     def visit(self, cb):
         return self
+    visit = visit_chk(visit)
     def copy(self):
         return ExprInt(self.arg)
 
 class ExprId(Expr):
-    def __init__(self, name, size = 32, is_term = False):
+    def __init__(self, name, size = 32, is_term = False, is_reg = False):
         self.name, self.size = name, size
         self.is_term = is_term
+        self.is_reg = is_reg
     def __str__(self):
         return str(self.name)
     def get_r(self, mem_read=False):
@@ -222,22 +228,23 @@ class ExprId(Expr):
     def __eq__(self, a):
         if not isinstance(a, ExprId):
             return False
-        if self.name == a.name and self.size != a.size:
-            fdsfdsfdsdsf
-        return self.name == a.name and self.size == a.size
+        return self.name == a.name and self.size == a.size and self.is_reg == a.is_reg
     def __hash__(self):
         return hash(self.name)
     def __repr__(self):
-        return Expr.__repr__(self)[:-1]+" %s>"%self.name
+        res = Expr.__repr__(self)[:-1]
+        res += " %s"%self.name
+        if self.is_reg: res += " register"
+        return res + ">"
     def toC(self):
         return str(self)
-    @visit_chk
     def visit(self, cb):
         return self
+    visit = visit_chk(visit)
     def copy(self):
-        return ExprId(self.name, self.size)
+        return ExprId(self.name, size=self.size, is_term=self.is_term, is_reg=self.is_reg)
 
-memreg = ExprId('MEM')
+memreg = ExprId('MEM', is_reg=True)
 
 
 
@@ -247,8 +254,7 @@ class ExprAff(Expr):
         if isinstance(dst, ExprSlice):
             self.dst = dst.arg
             rest = [(ExprSlice(dst.arg, r[0], r[1]), r[0], r[1]) for r in slice_rest(dst.arg.size, dst.start, dst.stop)]
-            all_a = [(src, dst.start, dst.stop)] + rest
-            all_a.sort(key=lambda x:x[1])
+            all_a = sorted([(src, dst.start, dst.stop)] + rest, key=lambda x:x[1])
             self.src = ExprCompose(all_a)
         else:
             self.dst, self.src = dst,src
@@ -284,13 +290,13 @@ class ExprAff(Expr):
             if not isinstance(x[0], ExprSlice) or x[0].arg != dst or x[1] != x[0].start or x[2] != x[0].stop:
                 modified_s.append(x)
         return modified_s
-    @visit_chk
     def visit(self, cb):
         dst, src = self.dst.visit(cb), self.src.visit(cb)
         if dst == self.dst and src == self.src:
             return self
         else:
             return ExprAff(dst, src)
+    visit = visit_chk(visit)
     def copy(self):
         return ExprAff(self.dst.copy(), self.src.copy())
 
@@ -317,7 +323,6 @@ class ExprCond(Expr):
         return hash(self.cond)^hash(self.src1)^hash(self.src2)
     def toC(self):
         return "(%s?%s:%s)"%(self.cond.toC(), self.src1.toC(), self.src2.toC())
-    @visit_chk
     def visit(self, cb):
         cond = self.cond.visit(cb)
         src1 = self.src1.visit(cb)
@@ -327,6 +332,7 @@ class ExprCond(Expr):
                 src2 == self.src2:
             return self
         return ExprCond(cond, src1, src2)
+    visit = visit_chk(visit)
     def copy(self):
         return ExprCond(self.cond.copy(),
                         self.src1.copy(),
@@ -356,6 +362,8 @@ class ExprMem(Expr):
         if not isinstance(a, ExprMem):
             return False
         return self.arg == a.arg and self.size == a.size and self.segm == a.segm
+    def __lt__(self, a):
+        return id(self) < id(a)
     def __hash__(self):
         return hash(self.arg)^hash(self.size)^hash(self.segm)
     def toC(self):
@@ -363,7 +371,6 @@ class ExprMem(Expr):
             return "MEM_LOOKUP_%.2d_SEGM(%s, %s)"%(self.size, self.segm.toC(), self.arg.toC())
         else:
             return "MEM_LOOKUP_%.2d(%s)"%(self.size, self.arg.toC())
-    @visit_chk
     def visit(self, cb):
         segm = self.segm
         if isinstance(segm, Expr):
@@ -374,6 +381,7 @@ class ExprMem(Expr):
         if segm == self.segm and arg == self.arg:
             return self
         return ExprMem(arg, self.size, segm)
+    visit = visit_chk(visit)
     def copy(self):
         arg = self.arg.copy()
         if self.segm:
@@ -392,14 +400,18 @@ class ExprOp(Expr):
     def __str__(self):
         if self.op in op_assoc:
             return '(' + self.op.join([str(x) for x in self.args]) + ')'
+        if   len(self.args) == 0:
+            return '(%s)' % self.op
+        if len(self.args) == 1:
+            return '(%s %s)' % (self.op, self.args[0])
         if len(self.args) == 2:
-            return '('+str(self.args[0]) + ' ' + self.op + ' ' + str(self.args[1]) + ')'
-        elif len(self.args)> 2:
-            return self.op + '(' + ', '.join([str(x) for x in self.args]) + ')'
-        else:
-            return reduce(lambda x,y:x+' '+str(y), self.args, '('+str(self.op))+')'
+            return '(%s %s %s)' % (self.args[0], self.op, self.args[1])
+        return self.op + '(' + ', '.join([str(x) for x in self.args]) + ')'
     def get_r(self, mem_read=False):
-        return reduce(lambda x,y:x.union(y.get_r(mem_read)), self.args, set())
+        r = set()
+        for a in self.args:
+            r = r.union(a.get_r(mem_read))
+        return r
     def get_w(self):
         raise ValueError('op cannot be written!', self)
     #return 1st arg size XXX
@@ -463,8 +475,7 @@ class ExprOp(Expr):
             elif self.op in ["load_tr_segment_selector"]:
                 return "%s(%s)"%(self.op, self.args[0].toC())
             else:
-                print self.op
-                raise ValueError('unknown op!!', str(self.op))
+                raise ValueError('unknown op! %s'%self.op)
                 return '('+str(self.op)+self.args[0].toC()+')'
         elif len(self.args)==2:
             if self.op == "==":
@@ -545,13 +556,7 @@ class ExprOp(Expr):
             elif self.op in ["fadd", "fsub", "fdiv", 'fmul', "fscale"]:
                 return "%s(%s, %s)"%(self.op, self.args[0].toC(), self.args[1].toC())
             else:
-                print self.op
-                raise ValueError('unknown op!!', str(self.op))
-        elif len(self.args)==3 and self.op == "+":
-            return '((%s + %s + %s) &0x%x)'%(self.args[0].toC(),
-                                             self.args[1].toC(),
-                                             self.args[2].toC(),
-                                             my_size_mask[self.args[0].get_size()])
+                raise ValueError('unknown op! %s'%self.op)
         elif len(self.args)==3:
             dct_div= {'div8':"div_op",
                       'div16':"div_op",
@@ -567,7 +572,7 @@ class ExprOp(Expr):
                       '>>>c_cf':'rcr_cf_op',
                       }
             if not self.op in dct_div:
-                raise ValueError('toC type expr is not implemented')
+                fsdff
             return '(%s(%s, %s, %s, %s) &0x%x)'%(dct_div[self.op],
                                                  self.args[0].get_size(),
                                                  self.args[0].toC(),
@@ -576,13 +581,14 @@ class ExprOp(Expr):
                                                  my_size_mask[self.args[0].get_size()])
         else:
             raise ValueError('not imple', str(self))
-    @visit_chk
     def visit(self, cb):
         args = [a.visit(cb) for a in self.args]
-        modified = any([x[0] != x[1] for x in zip(self.args, args)])
-        if modified:
-            return ExprOp(self.op, *args)
+        for x in zip(self.args, args):
+            if x[0] != x[1]:
+                # has been modified
+                return ExprOp(self.op, *args)
         return self
+    visit = visit_chk(visit)
     def copy(self):
         args = [a.copy() for a in self.args]
         return ExprOp(self.op, *args)
@@ -613,12 +619,12 @@ class ExprSlice(Expr):
         return "((%s>>%d) & 0x%X)"%(self.arg.toC(),
                                     self.start,
                                     (1<<(self.stop-self.start))-1)
-    @visit_chk
     def visit(self, cb):
         arg = self.arg.visit(cb)
         if arg == self.arg:
             return self
         return ExprSlice(arg, self.start, self.stop)
+    visit = visit_chk(visit)
     def copy(self):
         return ExprSlice(self.arg.copy(), self.start, self.stop)
 
@@ -628,9 +634,12 @@ class ExprCompose(Expr):
     def __str__(self):
         return '('+', '.join(['%s,%d,%d'%(str(x[0]), x[1], x[2]) for x in self.args])+')'
     def get_r(self, mem_read=False):
-        return reduce(lambda x,y:x.union(y[0].get_r(mem_read)), self.args, set())
+        r = set()
+        for a in self.args:
+            r = r.union(a[0].get_r(mem_read))
+        return r
     def get_w(self):
-        return reduce(lambda x,y:x.union(y[0].get_r(mem_read)), self.args, set())
+        TODO
     def get_size(self):
         return max([x[2] for x in self.args]) - min([x[1] for x in self.args])
     def __contains__(self, e):
@@ -665,13 +674,14 @@ class ExprCompose(Expr):
                                               x[1]))
         out = ' | '.join(out)
         return '('+out+')'
-    @visit_chk
     def visit(self, cb):
         args = [(a[0].visit(cb), a[1], a[2]) for a in self.args]
-        modified = any([x[0] != x[1] for x in zip(self.args, args)])
-        if modified:
-            return ExprCompose(args)
+        for x in zip(self.args, args):
+            if x[0] != x[1]:
+                # has been modified
+                return ExprCompose(args)
         return self
+    visit = visit_chk(visit)
     def copy(self):
         args = [(a[0].copy(), a[1], a[2]) for a in self.args]
         return ExprCompose(args)
@@ -720,93 +730,33 @@ class set_expr:
     def __iter__(self):
         return self._list.__iter__()
 
+def key_expr(e):
+    if e.__class__ == ExprId:
+        return [ 1, e.name, e.size ]
+    elif e.__class__ == ExprCond:
+        return [ 2, key_expr(e.cond), key_expr(e.src1), key_expr(e.src2) ]
+    elif e.__class__ == ExprMem:
+        return [ 3, key_expr(e.arg), e.size ]
+    elif e.__class__ == ExprOp:
+        return [ 4, e.op ] + [ key_expr(e) for e in e.args ]
+    elif e.__class__ == ExprSlice:
+        return [ 5, key_expr(e.arg), e.start, e.stop ]
+    elif e.__class__ == ExprAff:
+        TODO
+    elif e.__class__ == ExprCompose:
+        return [ 7 ] + [ key_expr_compose(e) for e in e.args ]
+    elif e.__class__ == ExprInt:
+        return [ 8, e.arg ]
+    raise ValueError("not imppl %r"%e)
 
-expr_order_dict = {ExprId: 1,
-                   ExprCond: 2,
-                   ExprMem: 3,
-                   ExprOp: 4,
-                   ExprSlice: 5,
-                   ExprCompose: 7,
-                   ExprInt: 8,
-                   }
-
-def compare_exprs_compose(e1, e2):
-    # sort by start bit address, then expr then stop but address
-    x = cmp(e1[1], e2[1])
-    if x: return x
-    x = compare_exprs(e1[0], e2[0])
-    if x: return x
-    x = cmp(e1[2], e2[2])
-    return x
-
-def compare_expr_list_compose(l1_e, l2_e):
-    for i in xrange(min(len(l1_e), len(l2_e))):
-        x = compare_exprs_compose(l1_e[i], l2_e[i])
-        if x: return x
-    return cmp(len(l1_e), len(l2_e))
-
-def compare_expr_list(l1_e, l2_e):
-    for i in xrange(min(len(l1_e), len(l2_e))):
-        x = compare_exprs(l1_e[i], l2_e[i])
-        if x: return x
-    return cmp(len(l1_e), len(l2_e))
-
-# compare 2 expressions for canonization
-# 0  => ==
-# 1  => e1 > e2
-# -1 => e1 < e2
-def compare_exprs(e1, e2):
-    c1 = e1.__class__
-    c2 = e2.__class__
-    if c1 != c2:
-        return cmp(expr_order_dict[c1], expr_order_dict[c2])
-    if e1 == e2:
-        return 0
-    if c1 == ExprInt:
-        return cmp(e1.arg, e2.arg)
-    elif c1 == ExprId:
-        x = cmp(e1.name, e2.name)
-        if x: return x
-        return cmp(e1.size, e2.size)
-    elif c1 == ExprAff:
-        fds
-    elif c2 == ExprCond:
-        x = compare_exprs(e1.cond, e2.cond)
-        if x: return x
-        x = compare_exprs(e1.src1, e2.src1)
-        if x: return x
-        x = compare_exprs(e1.src2, e2.src2)
-        return x
-    elif c1 == ExprMem:
-        x = compare_exprs(e1.arg, e2.arg)
-        if x: return x
-        return cmp(e1.size, e2.size)
-    elif c1 == ExprOp:
-        if e1.op != e2.op:
-            return cmp(e1.op, e2.op)
-        return compare_expr_list(e1.args, e2.args)
-    elif c1 == ExprSlice:
-        x = compare_exprs(e1.arg, e2.arg)
-        if x: return x
-        x = cmp(e1.start, e2.start)
-        if x: return x
-        x = cmp(e1.stop, e2.stop)
-        return x
-    elif c1 == ExprCompose:
-        return compare_expr_list_compose(e1.args, e2.args)
-    raise ValueError("not imppl %r %r"%(e1, e2))
-
-
+def key_expr_compose(e):
+    return (e[1], key_expr(e[0]), e[2])
 
 def canonize_expr_list(l):
-    l = list(l)
-    l.sort(cmp=compare_exprs)
-    return l
+    return sorted(l, key=key_expr)
 
 def canonize_expr_list_compose(l):
-    l = l[:]
-    l.sort(cmp=compare_exprs_compose)
-    return l
+    return sorted(l, key=key_expr_compose)
 
 tab_uintsize ={1:uint1,
                8:uint8,
@@ -853,7 +803,7 @@ def MatchExpr(e, m, tks, result = None):
     """
     if result == None:
         result = {}
-    #print 'match', e, m, tks, result
+    #print('match %s %s %s %s'%(e, m, tks, result))
     if m in tks:
         return test_set(e, m, tks, result)
     if isinstance(e, ExprInt):
@@ -910,24 +860,24 @@ if __name__ == '__main__':
     b = ExprId('b')
     c = ExprId('c')
 
-    print MatchExpr(x, a, [a])
-    print MatchExpr(ExprInt32(12), a, [a])
-    print MatchExpr(x+y, a, [a])
-    print MatchExpr(x+y, a+y, [a])
-    print MatchExpr(x+y, x+a, [a])
-    print MatchExpr(x+y, a+b, [a, b])
-    print MatchExpr(x+ExprId(12), a+b, [a, b])
-    print MatchExpr(ExprMem(x), a, [a])
-    print MatchExpr(ExprMem(x), ExprMem(a), [a])
-    print MatchExpr(x[0:8], a, [a])
-    print MatchExpr(x[0:8], a[0:8], [a])
-    print MatchExpr(ExprCond(x, y, z), a, [a])
-    print MatchExpr(ExprCond(x, y, z),
-                    ExprCond(a, b, c), [a, b, c])
-    print MatchExpr(ExprCompose([(x, 0, 8), (y, 8, 16)]), a, [a])
-    print MatchExpr(ExprCompose([(x, 0, 8), (y, 8, 16)]),
-                    ExprCompose([(a, 0, 8), (b, 8, 16)]), [a, b])
+    print(MatchExpr(x, a, [a]))
+    print(MatchExpr(ExprInt32(12), a, [a]))
+    print(MatchExpr(x+y, a, [a]))
+    print(MatchExpr(x+y, a+y, [a]))
+    print(MatchExpr(x+y, x+a, [a]))
+    print(MatchExpr(x+y, a+b, [a, b]))
+    print(MatchExpr(x+ExprId(12), a+b, [a, b]))
+    print(MatchExpr(ExprMem(x), a, [a]))
+    print(MatchExpr(ExprMem(x), ExprMem(a), [a]))
+    print(MatchExpr(x[0:8], a, [a]))
+    print(MatchExpr(x[0:8], a[0:8], [a]))
+    print(MatchExpr(ExprCond(x, y, z), a, [a]))
+    print(MatchExpr(ExprCond(x, y, z),
+                    ExprCond(a, b, c), [a, b, c]))
+    print(MatchExpr(ExprCompose([(x, 0, 8), (y, 8, 16)]), a, [a]))
+    print(MatchExpr(ExprCompose([(x, 0, 8), (y, 8, 16)]),
+                    ExprCompose([(a, 0, 8), (b, 8, 16)]), [a, b]))
 
     e1 = ExprMem((a&ExprInt32(0xFFFFFFFC))+ExprInt32(0x10), 32)
     e2 = ExprMem((a&ExprInt32(0xFFFFFFFC))+b, 32)
-    print MatchExpr(e1, e2, [b])
+    print(MatchExpr(e1, e2, [b]))

@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasm.expression.expression import *
+from miasmX.expression.expression import *
 
 tab_size_int = {1:uint1,
                 8:uint8,
@@ -24,11 +25,11 @@ tab_size_int = {1:uint1,
                 64:uint64,
                 }
 
-tab_max_uint = {8:uint8(0xFF), 16:uint16(0xFFFF), 32:uint32(0xFFFFFFFF), 64:uint64(0xFFFFFFFFFFFFFFFFL)}
+tab_max_uint = {8:uint8(0xFF), 16:uint16(0xFFFF), 32:uint32(uint32.limit-1), 64:uint64(uint64.limit-1)}
 
 
 def parity(a):
-    tmp = (a)&0xFFL
+    tmp = (a)&0xFF
     cpt = 1
     while tmp!=0:
         cpt^=tmp&1

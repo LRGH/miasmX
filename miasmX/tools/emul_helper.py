@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # Copyright (C) 2011 EADS France, Fabrice Desclaux <fabrice.desclaux@eads.net>
+# Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +18,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from miasm.arch.ia32_sem import *
-from miasm.expression.expression_helper import *
-from miasm.core.memory_pool import *
-from miasm.core import asmbloc
-import StringIO
-import zlib
+from miasmX.arch.ia32_sem import *
+from miasmX.expression.expression_helper import *
+from miasmX.core.memory_pool import *
 
-from miasm.expression.expression_eval_abstract import *
+from miasmX.expression.expression_eval_abstract import *
 
 log_emu_helper = logging.getLogger("emu.helper")
 console_handler = logging.StreamHandler()
@@ -46,7 +44,7 @@ def tohex(a):
 
     try:
         a = int(a)
-    except:
+    except ValueError:
         return a
     if a <0:
         a = struct.pack('l', a)
@@ -56,12 +54,12 @@ def tohex(a):
     return hex(a)
 
 
-jcc = ['jz', 'je', 'jnz', 'jp', 'jnp', 'jg', 'jge', 'ja', 'jae', 'jb', 'jbe', 'jl', 'jle', 'js', 'jns', 'jo', 'jno', 'loop', 'loopne', 'loope', 'jecxz']
+jcc = ['jz', 'je', 'jne', 'jnz', 'jp', 'jnp', 'jg', 'jge', 'ja', 'jae', 'jb', 'jbe', 'jnb', 'jc', 'jnc', 'jl', 'jle', 'js', 'jns', 'jo', 'jno', 'loop', 'loopne', 'loope', 'jecxz']
 
 def dump_pool(p):
     log_emu_helper.error('/-------------\\')
     for x in p:
-        log_emu_helper.error(str(x)+' '+tohex(str(p[x])))
+        log_emu_helper.error('%s %s', x, tohex(str(p[x])))
     log_emu_helper.error('\\_____________/')
 
 def dump_reg(p):
@@ -102,7 +100,7 @@ def dump_mem(p):
 def mem_read(evaluator, env, src_address, mem_size):
     if not isinstance(src_address, ExprInt):
         dump_pool(evaluator.pool)
-        raise "cannot read", str(src_address)
+        raise ValueError("cannot read %s"%src_address)
     src_address_l = int(src_address.arg)
     try:
 
@@ -113,10 +111,10 @@ def mem_read(evaluator, env, src_address, mem_size):
         elif mem_size == 8:
             ret = uint8(env.get_b(src_address_l))
         else:
-            raise 'unknown size read', str(src_address.nbytes)
-        log_emu_helper.debug("=>read @(%X)(%.8X)"%(src_address_l, int(ret)))
+            raise ValueError('unknown size read %s'%src_address.nbytes)
+        log_emu_helper.debug("=>read @(%X)(%.8X)", src_address_l, int(ret))
         return ExprInt(ret)
-    except:
+    except ValueError:
         dump_pool(evaluator.pool)
         raise ValueError('read bug at 0x%X'%int(src_address_l))
 
@@ -127,7 +125,7 @@ def mem_write(evaluator, env, mem_size, dst_address, src_val, pool_out = None):
     dst_address_l = int(dst_address.arg)
     src_val = src_val.arg
     try:
-        log_emu_helper.debug("=>write @(%X)(%.8X)"%(dst_address_l, int(src_val)))
+        log_emu_helper.debug("=>write @(%X)(%.8X)", dst_address_l, int(src_val))
         if mem_size == 32:
             env.set_d(dst_address_l, src_val&0xffffffff)
         elif mem_size == 16:
@@ -135,21 +133,21 @@ def mem_write(evaluator, env, mem_size, dst_address, src_val, pool_out = None):
         elif mem_size == 8:
             env.set_b(dst_address_l, src_val&0xff)
         else:
-            raise 'unknown size write', str(dst_address.nbytes)
-    except:
+            raise ValueError('unknown size write %s'%dst_address.nbytes)
+    except ValueError:
         dump_pool(evaluator.pool)
         raise' write bug'
 """
 ###XXX for eval int
 def get_instr_expr_args(name, modifs, mnemo_mode, args, my_eip):
     for a in args:
-        if type(a) in [int, long]:
+        if type(a) == int:
             raise ValueError('int deprec in args')
 
 
     if name in ['jmp']:
         if isinstance(args[0], ExprInt):
-            print "X"*0x10, args[0]
+            print("%s %s"%("X"*0x10, args[0]))
             arga = args[0].arg
             if isinstance(arga, uint8):
                 arga = int8(arga)
@@ -176,11 +174,10 @@ def get_instr_expr_args(name, modifs, mnemo_mode, args, my_eip):
 """
 
 
-#"""
 ###XXX for eval abs
 def get_instr_expr_args(l, args, my_eip):
     for a in args:
-        if type(a) in [int, long]:
+        if type(a) == int:
             raise ValueError('int deprec in args')
 
     info = l
@@ -193,10 +190,15 @@ def get_instr_expr_args(l, args, my_eip):
         e = mnemo_func[l.m.name](l, my_eip, args[0])
     elif l.m.name in ['call']:
         e = mnemo_func[l.m.name](l, my_eip, args[0])
+    elif l.m.name in mnemo_func:
+        e = mnemo_func[l.m.name](l, *args)
+    elif '#' in l.m.name:
+        # Most MMX/SSE instructions leave eflags untouched
+        e = MMXnoflags(l, *args)
     else:
+        # Raises an error
         e = mnemo_func[l.m.name](l, *args)
     return e
-#"""
 
 ###XXX for eval abs
 def get_instr_expr(l, my_eip, args = None, segm_to_do = set()):
@@ -269,7 +271,7 @@ def emul_loadlibrary(machine, env):
     machine.eval_instr(mov(eax, ExprInt(uint32(machine.lib_base))))
 
     machine.lib_base+=0x1000
-    print "emul loadlib %X, %s"%(libname_ad, libname[:-1])
+    print("emul loadlib %X, %s"%(libname_ad, libname[:-1]))
     log.info("emul loadlib %X, %s"%(libname_ad, libname))
     machine.eval_instr(ret(ExprInt(uint32(4))))
     my_eip = machine.eval_expr(machine.pool[eip], {})
@@ -289,7 +291,7 @@ def emul_getprocaddress(machine, env):
             break
 
     log.info("emul getprocaddress %X, %s"%(libbase_ad, funcname))
-    print "emul getprocaddress %X, %s"%(libbase_ad, funcname[:-1])
+    print("emul getprocaddress %X, %s"%(libbase_ad, funcname[:-1]))
 
     if not libbase_ad in machine.lib_bases:
         log.debug(machine.lib_bases)
@@ -319,11 +321,11 @@ def dump_imp(machine):
 
      log_emu_helper.warn('_'*10)
      for l in machine.lib_bases:
-         log_emu_helper.warn("%.8X %s"%(l, machine.lib_bases[l]))
+         log_emu_helper.warn("%.8X %s", l, machine.lib_bases[l])
 
      log_emu_helper.warn('_'*10)
      for f in machine.func_loaded:
-         log_emu_helper.warn("%.8X %s"%(f, machine.func_loaded[f]))
+         log_emu_helper.warn("%.8X %s", f, machine.func_loaded[f])
 
 
 def emul_malloc(machine, env):
@@ -519,7 +521,8 @@ def emul_kddisabledebugger(machine, env):
 
 def sav_machine(machine, env, my_eip, snap_fmt_name):
 
-    print 'SAVE**************tsc: %.10d***************'%machine.pool[tsc1].arg
+    import StringIO, zlib
+    print('SAVE**************tsc: %.10d***************'%machine.pool[tsc1].arg)
     machine.pool[eip] = my_eip
     env_s = StringIO.StringIO()
     env.to_file(env_s)
@@ -536,6 +539,7 @@ def sav_machine(machine, env, my_eip, snap_fmt_name):
 
 def load_machine(snap_fmt_name, step):
 
+    import StringIO, zlib
     fname = snap_fmt_name+".env"
     env_s = StringIO.StringIO(zlib.decompress(open(fname%step, 'rb').read()))
     env = mempool_manager.from_file(env_s)
@@ -544,27 +548,49 @@ def load_machine(snap_fmt_name, step):
     machine = eval_int.from_file(machine_s, globals())
     my_eip = machine.pool[eip]
     del machine.pool[eip]
-    print 'LOAD**************tsc: %.10X***************'%machine.pool[tsc1].arg
-    print "machine eip: %.8X"%int(my_eip.arg)
+    print('LOAD**************tsc: %.10X***************'%machine.pool[tsc1].arg)
+    print("machine eip: %.8X"%int(my_eip.arg))
 
     return machine, env, my_eip
 
 def emul_full_expr(e, l, my_eip, env, machine):
     if ((not 0xF2 in l.prefix) and (not 0xF3 in l.prefix)) or \
+           "MMX" in l.m.name or \
            not l.m.name[:-1] in ["ins", "outs", "movs", "lods", "stos", "cmps", "scas"]:
         my_eip, mem_dst = emul_expr(machine, e, my_eip)
     else:
         #rep mnemo
         #XXX HACK 16 bit
+        tsc_inc = 0
         if 0x66 in l.prefix and l.m.name[-1]== "d":
             raise "not impl 16 bit string"
-        zf_w = zf in reduce(lambda x,y:x+y, [list(x.get_w()) for x in e], [])
+        if l.m.name[:-1] in ["cmps", "scas"]: # repz or repnz
+            zf_w = False
+            for x in e:
+                if zf in x.get_w():
+                    zf_w = True
+        else: # rep
+            zf_w = False
+
+        def expr_depth(f):
+            if isinstance(f, ExprOp) or isinstance(f, ExprCompose):
+                depth = 1
+                for a in f.args:
+                    depth += expr_depth(a)
+                return depth
+            elif isinstance(f, ExprMem):
+                return 1 + expr_depth(f.arg)
+            elif isinstance(f, ExprCond):
+                return expr_depth(f.cond)+expr_depth(f.src1)+expr_depth(f.src2)
+            else:
+                return 0
 
         while True:
 
             my_ecx = machine.eval_expr(machine.pool[ecx], {})
-            if not isinstance(my_ecx, ExprInt):# in tab_int_size:#[int, long]:
-                raise "cannot eval counter....", str(machine.pool[ecx])
+            if not isinstance(my_ecx, ExprInt):
+                raise ValueError('Emulation fails for "%s". ECX value is %s'
+                    % (l, str(machine.pool[ecx])))
             if l.mnemo_mode== u16:
                 my_ecx.arg&=0xFFFF
             if my_ecx.arg ==0:
@@ -572,7 +598,12 @@ def emul_full_expr(e, l, my_eip, env, machine):
 
             my_esi = machine.eval_expr(machine.pool[esi], {})
             my_edi = machine.eval_expr(machine.pool[edi], {})
+            if expr_depth(my_edi) > 100:
+                raise ValueError('Emulation fails for "%s". EDI value is too complicated' % l)
             tmp,mem_dst =  emul_expr(machine, e, my_eip)
+            if my_ecx.arg > 0x1000:
+                # This is not a valid emulation, but we don't want to loop forever
+                break
 
             info = l.opmode, l.admode
             machine.eval_instr(mov(info, ecx, ExprOp('-', my_ecx, ExprInt(uint32(1)))))
@@ -585,7 +616,11 @@ def emul_full_expr(e, l, my_eip, env, machine):
                 if 0xF2 in l.prefix and my_zf == 1:
                     break
 
-            machine.pool[tsc1].arg+=uint32(1)
+            tsc_inc += 1
+        # serpillere included an emulation of TSC incrementation,
+        # why here and nowhere else?
+        if isinstance(machine.pool[tsc1], ExprInt):
+            machine.pool[tsc1].arg += tsc_inc
 
     return my_eip, mem_dst
 
@@ -604,7 +639,7 @@ def guess_func_destack(all_bloc):
             continue
         if ret_destack!=None:
             if a != ret_destack:
-                print 'found diff ret unstack', ret_destack, a
+                print('found diff ret unstack %s %s'%(ret_destack, a))
                 return None, None
             else:
                 continue
@@ -622,7 +657,7 @@ def guess_func_destack(all_bloc):
         return None, None
 
     a = l.arg[0]
-    print hex(l.offset), a, type(a)
+    print("%s %s %s"%(hex(l.offset), a, type(a)))
 
     if not x86_afs.imm in a or not x86_afs.ad in a or not a[x86_afs.ad]:
         return None, None
@@ -632,10 +667,6 @@ def guess_func_destack(all_bloc):
 
 def digest_allbloc_instr(all_bloc, segm_to_do = set()):
     instrs = {}
-    """
-    g = asmbloc.bloc2graph(all_bloc)
-    open("graph_b.txt" , "w").write(g)
-    """
 
     #test duplicated blocs
     unik_blobs = {}
@@ -650,8 +681,7 @@ def digest_allbloc_instr(all_bloc, segm_to_do = set()):
         tmp = blcs.pop()
         for b in blcs:
             if str(tmp) != str(b):
-                print tmp
-                print b
+                print("%s != %s"%(tmp,b))
                 raise ValueError('diff bloc in same label')
             all_bloc.remove(b)
 
@@ -670,23 +700,16 @@ def digest_allbloc_instr(all_bloc, segm_to_do = set()):
 
 
 def x86_machine(mem_read_wrap = None, mem_write_wrap = None):
-    machine = eval_abs({esp:init_esp, ebp:init_ebp, eax:init_eax, ebx:init_ebx, ecx:init_ecx, edx:init_edx, esi:init_esi, edi:init_edi,
-                        cs:ExprInt(uint32(9)),
-                        zf :  init_zf,  nf :  init_nf, pf : init_pf,
-                        of :  init_of, cf :  init_cf, tf : init_tf,
-                        i_f:  init_i_f, df :  init_df, af : init_af,
-                        iopl: init_iopl, nt :  init_nt, rf : init_rf,
-                        vm :  init_vm, ac :  init_ac, vif: init_vif,
-                        vip:  init_vip, i_d:  init_i_d,tsc1: init_tsc1,
-                        tsc2: init_tsc2,
-                        dr7:ExprInt(uint32(0)),
-                        cr0:init_cr0,
-                        #my_ret_addr:my_ret_addri
-
-                        },
+    init_reg_new = init_regs.copy()
+    init_reg_new.update({
+        cs:ExprInt(uint32(9)),
+        dr7:ExprInt(uint32(0)),
+        cr0:init_cr0,
+        #my_ret_addr:my_ret_addri
+        })
+    machine = eval_abs(init_reg_new,
                        mem_read_wrap,
                        mem_write_wrap,
-
                        )
     return machine
 
