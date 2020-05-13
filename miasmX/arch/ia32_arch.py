@@ -319,7 +319,11 @@ def add_imm_to_string(base, immediate, size, imm_format="%d"):
     if size in [x86_afs.u32, True] and immediate > 2**31:
         immediate -= 2**32
     if immediate < 0 or base == "":
-        format = "%s" + imm_format
+        if immediate < 0:
+            immediate = -immediate
+            format = "%s-" + imm_format
+        else:
+            format = "%s" + imm_format
     else:
         format = "%s+" + imm_format
     return format % (base, immediate)
