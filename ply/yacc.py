@@ -201,9 +201,6 @@ class YaccProduction:
     def __setitem__(self,n,v):
         self.slice[n].value = v
 
-    def __getslice__(self,i,j):
-        return [s.value for s in self.slice[i:j]]
-
     def __len__(self):
         return len(self.slice)
 
@@ -486,7 +483,7 @@ class LRParser:
                     # --! DEBUG
                     return result
 
-            if t == None:
+            if t is None:
 
                 # --! DEBUG
                 debug.error('Error  : %s',
@@ -764,7 +761,7 @@ class LRParser:
                     n = symstack[-1]
                     return getattr(n,"value",None)
 
-            if t == None:
+            if t is None:
 
                 # We have some kind of parsing error here.  To handle
                 # this, we are going to push the current token onto
@@ -1019,7 +1016,7 @@ class LRParser:
                     n = symstack[-1]
                     return getattr(n,"value",None)
 
-            if t == None:
+            if t is None:
 
                 # We have some kind of parsing error here.  To handle
                 # this, we are going to push the current token onto
@@ -1119,8 +1116,6 @@ class LRParser:
 # The following functions, classes, and variables are used to represent and
 # manipulate the rules that make up a grammar. 
 # -----------------------------------------------------------------------------
-
-import re
 
 # regex matching identifiers
 _is_identifier = re.compile(r'^[a-zA-Z0-9_-]+$')
@@ -1944,6 +1939,7 @@ class LRGeneratedTable(LRTable):
         if method not in ['SLR','LALR']:
             raise LALRError("Unsupported method %s" % method)
 
+        LRTable.__init__(self) # overwritten by later assignments
         self.grammar = grammar
         self.lr_method = method
 
@@ -2128,7 +2124,6 @@ class LRGeneratedTable(LRTable):
                       t = (state,p.prod[p.lr_index+1])
                       if t[1] in self.grammar.Nonterminals:
                             if t not in trans: trans.append(t)
-             state = state + 1
          return trans
 
     # -----------------------------------------------------------------------------
@@ -2141,7 +2136,6 @@ class LRGeneratedTable(LRTable):
     # -----------------------------------------------------------------------------
 
     def dr_relation(self,C,trans,nullable):
-        dr_set = { }
         state,N = trans
         terms = []
 
@@ -2901,11 +2895,6 @@ class ParserReflect(object):
             self.error = 1
             return
         
-        if not tokens:
-            self.log.error("tokens is empty")
-            self.error = 1
-            return
-
         self.tokens = tokens
 
     # Validate the tokens

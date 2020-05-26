@@ -519,7 +519,6 @@ def _form_master_re(relist,reflags,ldict,toknames):
 # -----------------------------------------------------------------------------
 
 def _statetoken(s,names):
-    nonstate = 1
     parts = s.split("_")
     for i in range(1,len(parts)):
          if not parts[i] in names and parts[i] != 'ANY': break
@@ -583,11 +582,6 @@ class LexerReflect(object):
             self.error = 1
             return
         
-        if not tokens:
-            self.log.error("tokens is empty")
-            self.error = 1
-            return
-
         self.tokens = tokens
 
     # Validate the tokens
@@ -731,7 +725,6 @@ class LexerReflect(object):
                 file = func_code(f).co_filename
                 self.files[file] = 1
 
-                tokname = self.toknames[fname]
                 if isinstance(f, types.MethodType):
                     reqargs = 2
                 else:
@@ -865,7 +858,6 @@ class LexerReflect(object):
 def lex(module=None,object=None,debug=0,optimize=0,lextab="lextab",reflags=0,nowarn=0,outputdir="", debuglog=None, errorlog=None):
     global lexer
     ldict = None
-    stateinfo  = { 'INITIAL' : 'inclusive'}
     lexobj = Lexer()
     lexobj.lexoptimize = optimize
     global token,input
@@ -931,8 +923,6 @@ def lex(module=None,object=None,debug=0,optimize=0,lextab="lextab",reflags=0,now
 
         # Add rules defined by functions first
         for fname, f in linfo.funcsym[state]:
-            line = func_code(f).co_firstlineno
-            file = func_code(f).co_filename
             regex_list.append("(?P<%s>%s)" % (fname,f.__doc__))
             if debug:
                 debuglog.info("lex: Adding rule %s -> '%s' (state '%s')",fname,f.__doc__, state)
