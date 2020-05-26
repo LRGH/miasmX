@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64, uint128, int8, int16, int32, int64, int128
+from miasmX.tools.modint import uint8, uint16, uint32, uint64, int8, int16, int32, int64
 try:
     # Needed for compatibility with python2.3
     from plasmasm.python.compatibility import set, sorted
@@ -338,7 +338,7 @@ def dict_to_ad(d, modifs = None, opmode = u32, admode = u32, asm_format='intel_s
         imm_format = "%#x"
     else:
         imm_format = "%d"
-    if modifs == None:
+    if modifs is None:
         modifs = dict([[x, None] for x in [w8, se, sw, ww, sg, dr, cr, ft, w64, sd, wd, bkf, spf, dtf, mmx]])
     size = [x86_afs.u32, x86_afs.u08][modifs[w8]==True]
     #overwrite w8
@@ -570,7 +570,7 @@ class x86allmncs:
             cpt+=1
             if type(i) == list:
                 self.print_op(i, decal+1)
-            elif i == None:
+            elif i is None:
                 pass
             else:
                 print("%.3d "%cpt + "\t"*decal + str(i))
@@ -882,7 +882,7 @@ class x86allmncs:
             log.debug(opc )
             log.debug(mask)
             for i in opc[:-1]:
-                if insert_tab[i] == None:
+                if insert_tab[i] is None:
                     insert_tab[i] = [None for x in range(0x100)]
                 insert_tab = insert_tab[i]
 
@@ -963,7 +963,7 @@ class x86allmncs:
             p = {}
             if x86_afs.imm in ad:
                 v = check_imm_size(a.get(x86_afs.imm, 0), ad[x86_afs.imm])
-                if v == None:
+                if v is None:
                     log.debug("cannot encode this val in size forge!")
                     return None, None
                 p = {x86_afs.size:ad[x86_afs.imm], x86_afs.imm:v, x86_afs.ad:ad[x86_afs.ad]}
@@ -1783,7 +1783,7 @@ def mmx_set_suffix(name, p):
     for suffix in mmx_suffixes:
         if suffix in name:
             import re
-            r = re.match(r'(\S*)'+suffix+'(\S*)', name)
+            r = re.match(r'(\S*)'+suffix+r'(\S*)', name)
             r = r.groups()
             suffix = mmx_suffixes[suffix][p]
             return r[0] + suffix + r[1]
@@ -2142,7 +2142,6 @@ class x86_mn(x86_mn_base):
     def setdstflow(self, dst):
         if len(self.arg) !=1:
             raise ValueError('should be 1 arg %s' % self)
-            return
         if len(dst)==0:
             return
         if len(dst)!=1:
@@ -2168,7 +2167,7 @@ class x86_mn(x86_mn_base):
         return self.m.name == 'call'
 
     def __str__(self, asm_format='intel_syntax noprefix'):
-        if asm_format == None: asm_format = 'intel_syntax noprefix'
+        if asm_format is None: asm_format = 'intel_syntax noprefix'
         if not asm_format in [
                 'intel_syntax',
                 'intel_syntax noprefix',
@@ -2310,7 +2309,6 @@ class x86_mn(x86_mn_base):
         try:
             #find mnemonic
             l = x86mndb.db_mnemo
-            index = 0
             m = None
             read_prefix = []
             prefix_done =False
@@ -2321,7 +2319,7 @@ class x86_mn(x86_mn_base):
                     continue
                 else:
                     prefix_done = True
-                if l[c] == None:
+                if l[c] is None:
                     log.debug( "unknown mnemo")
                     break
                 if isinstance(l[c] ,mnemonic):
@@ -2330,7 +2328,7 @@ class x86_mn(x86_mn_base):
                 if type(l[c]) == list:
                     l = l[c]
 
-            if m == None:
+            if m is None:
                 return None
             self.m = m
 
@@ -2354,7 +2352,6 @@ class x86_mn(x86_mn_base):
             swap_args = m.modifs[sw]
 
             afs, dibs = m.afs, m.rm
-            modrm = None
             #digit
             if afs in [d0, d1, d2, d3, d4, d5, d6, d7]:
                 if m.modifs[mmx]:
@@ -2609,11 +2606,9 @@ class x86_mn(x86_mn_base):
                     dib_out.append({x86_afs.ad:True, x86_afs.size:size, x86_afs.imm:d})
                 elif dib in [r_cl, r_dx]:
                     dib_out.append(dib)
-                    pass
 
                 elif dib in segm_regs:
                     size = self.opmode
-                    seg_regs = segm_regs
                     if not dib in segm_regs:
                         log.debug('segment reg not found %s' % dib)
                         raise ValueError('segment reg not found %s' % dib)
@@ -2953,11 +2948,11 @@ class x86_mn(x86_mn_base):
                     self.mnemo_mode = u32
                     break
                 if (name == 'push' or (is_reg(a) or is_address(a))) \
-                        and a[x86_afs.size] == u16 and self.mnemo_mode == None:
+                        and a[x86_afs.size] == u16 and self.mnemo_mode is None:
                     self.mnemo_mode = u16
                     break
 
-            if self.mnemo_mode == None:
+            if self.mnemo_mode is None:
                 self.mnemo_mode = u32
             if self.mnemo_mode == u16:
                 # 16 bit mode detected
@@ -3034,7 +3029,7 @@ class x86_mn(x86_mn_base):
                     size = dib
 
                     v = check_imm_size(args_sample[index_im][x86_afs.imm], size)
-                    if v == None:
+                    if v is None:
                         log.debug("cannot encode this val in size %s %x!", size, args_sample[index_im][x86_afs.imm])
                         good_c= False
                         break
@@ -3066,7 +3061,7 @@ class x86_mn(x86_mn_base):
                     taille, fmt, t = x86mndb.get_im_fmt(c.modifs, self.admode, dib)
                     r = args_sample.pop()
                     v = check_imm_size(r[x86_afs.imm], t)
-                    if v == None:
+                    if v is None:
                         log.debug("cannot encode this val in size %s %x!", t, int(r[x86_afs.imm]))
                         good_c= False
                         break
@@ -3198,7 +3193,7 @@ class x86_mn(x86_mn_base):
                     log.debug(' bad size digit')
                     continue
                 out_opc, parsed_val = x86mndb.forge_opc(out_opc, dict(a))
-                if out_opc == None or parsed_val == None:
+                if out_opc is None or parsed_val is None:
                     log.debug('cannot encode opc (dX afs)')
                     continue
                 parsed_args.append(a)
@@ -3237,7 +3232,7 @@ class x86_mn(x86_mn_base):
                 else:
                     size = a[x86_afs.size]
                 out_opc, parsed_val = x86mndb.forge_opc([[0]], dict(a))
-                if out_opc == None or parsed_val == None:
+                if out_opc is None or parsed_val is None:
                     log.debug('cannot encode opc (cond afs)')
                     continue
                 for i in range(len(out_opc)):
@@ -3305,7 +3300,7 @@ class x86_mn(x86_mn_base):
                     continue
 
                 out_opc, parsed_val = x86mndb.forge_opc(out_opc, *tmp_order)
-                if out_opc == None or parsed_val == None:
+                if out_opc is None or parsed_val is None:
                     log.debug('cannot encode opc (noafs)')
                     continue
 

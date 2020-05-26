@@ -16,7 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.expression.expression import *
+from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
+from miasmX.expression.expression import ExprOp, ExprSlice, ExprCompose, \
+    ExprCond, ExprInt, ExprMem
+from miasmX.expression.expression import canonize_expr_list
 
 tab_size_int = {1:uint1,
                 8:uint8,
@@ -57,7 +60,7 @@ def merge_sliceto_slice(args):
     # find max stop to determine size
     max_size = None
     for a in args:
-        if max_size == None or max_size < a[2]:
+        if max_size is None or max_size < a[2]:
             max_size = a[2]
 
     # first simplify all num slices

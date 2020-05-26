@@ -16,10 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.expression.expression import *
-from miasmX.arch.ia32_reg import *
-from miasmX.arch.ia32_arch import *
-import math
+from miasmX.tools.modint import uint8, uint16, uint32, uint64, uint128
+from miasmX.expression.expression import ExprInt, ExprInt32, ExprInt64, \
+    ExprId, ExprOp, ExprAff, ExprCond, ExprMem, ExprCompose, ExprSlice, \
+    ExprInt_from
+from miasmX.arch.ia32_reg import x86_afs
+from miasmX.arch.ia32_arch import w8, wd, sd, dr, cr, sg, mmx, \
+    is_reg, is_imm, is_address
+import struct, math
 try:
     # Needed for compatibility with python2.3
     from plasmasm.python.compatibility import set
@@ -453,7 +457,7 @@ tab_afs_int ={x86_afs.u08:uint8,
               x86_afs.xmm:uint128,
               }
 
-class ia32info:
+class ia32info(object):
     opmode = "u32"
     admode = "u32"
     # offset
@@ -509,7 +513,7 @@ def update_flag_arith(a):
 
 def check_ops_msb(a, b, c):
     if not a or not b or not c or a!=b or a!=c:
-        raise 'bad ops size %s %s %s'%(str(a), str(b), str(c))
+        raise ValueError('bad ops size %s %s %s'%(a, b, c))
 
 def arith_flag(a, b, c):
     a_s, b_s, c_s = a.get_size(), b.get_size(), c.get_size()
@@ -974,7 +978,7 @@ def push(info, a):
     # special case segment regs
     if a in [es, cs, ss, ds, fs, gs]:
         opmode, admode = info.opmode, info.admode
-        s = {u16:16, u32:32}[opmode]
+        s = {x86_afs.u16:16, x86_afs.u32:32}[opmode]
     if not s in [16, 32]:
         raise ValueError('bad size stacker!')
     c = ExprOp('-', esp, ExprInt32(s/8))
@@ -988,7 +992,7 @@ def pop(info, a):
     # special case segment regs
     if a in [es, cs, ss, ds, fs, gs]:
         opmode, admode = info.opmode, info.admode
-        s = {u16:16, u32:32}[opmode]
+        s = {x86_afs.u16:16, x86_afs.u32:32}[opmode]
     if not s in [16,32]:
         raise ValueError('bad size stacker!')
     new_esp = ExprOp('+', esp, ExprInt32(s/8))
@@ -1272,7 +1276,7 @@ def popad(info):
 def call(info, a, b):
     e= []
     opmode, admode = info.opmode, info.admode
-    if opmode == u16:
+    if opmode == x86_afs.u16:
         s = 16
         myesp = esp[:16]
     else:
@@ -1289,7 +1293,7 @@ def call(info, a, b):
 def ret(info, a = ExprInt32(0)):
     e = []
     opmode, admode = info.opmode, info.admode
-    if opmode == u16:
+    if opmode == x86_afs.u16:
         s = 16
         myesp = esp[:16]
     else:
@@ -1303,7 +1307,7 @@ def ret(info, a = ExprInt32(0)):
 def retf(info, a = ExprInt32(0)):
     e = []
     opmode, admode = info.opmode, info.admode
-    if opmode == u16:
+    if opmode == x86_afs.u16:
         s = 16
         myesp = esp[:16]
     else:
@@ -1320,7 +1324,7 @@ def retf(info, a = ExprInt32(0)):
 
 def leave(info):
     opmode, admode = info.opmode, info.admode
-    if opmode == u16:
+    if opmode == x86_afs.u16:
         s = 16
         myesp = esp[:16]
         myebp = ebp[:16]
@@ -1337,7 +1341,7 @@ def leave(info):
 
 def enter(info, a,b):
     opmode, admode = info.opmode, info.admode
-    if opmode == u16:
+    if opmode == x86_afs.u16:
         s = 16
         myesp = esp[:16]
         myebp = ebp[:16]
@@ -1503,7 +1507,7 @@ def div(info, a):
     elif s == 32:
         s1,s2 = edx, eax
     else:
-        raise ValueError('div arg not impl', a)
+        raise ValueError('div arg not impl %s'%a)
 
     c_d = ExprOp('div%d'%s, s1, s2, a)
     c_r = ExprOp('rem%d'%s, s1, s2, a)
@@ -1530,7 +1534,7 @@ def idiv(info, a):
     elif s == 32:
         s1,s2 = edx, eax
     else:
-        raise ValueError('div arg not impl', a)
+        raise ValueError('div arg not impl %s'%a)
 
 
     c_d = ExprOp('idiv%d'%s, s1, s2, a)
@@ -1585,7 +1589,7 @@ def mul(info, a):
 
 def imul(info, a, b = None, c = None):
     e= []
-    if b == None:
+    if b is None:
         if a.get_size() == 32:
             c_hi = ExprOp('imul32_hi', eax, a)
             c_lo = ExprOp('imul32_lo', eax, a)
@@ -1606,7 +1610,7 @@ def imul(info, a, b = None, c = None):
             e.append(ExprAff(cf, ExprCond(c-eax[:16], ExprInt32(1), ExprInt32(0))))
             e.append(ExprAff(of, ExprCond(c-eax[:16], ExprInt32(1), ExprInt32(0))))
     else:
-        if c == None:
+        if c is None:
             c = b
             b = a
         c = ExprOp('*', b, c)
@@ -1618,7 +1622,7 @@ def imul(info, a, b = None, c = None):
 def cdq(info):
     # XXX to check
     opmode, admode = info.opmode, info.admode
-    if opmode == u32:
+    if opmode == x86_afs.u32:
         e = []
         e.append(ExprAff(edx,
                          ExprCond(get_op_msb(eax),
@@ -1891,7 +1895,7 @@ def fincstp(info):
 
 
 def fadd(info, a, b = None):
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -1905,7 +1909,7 @@ def fadd(info, a, b = None):
     return e
 
 def faddp(info, a, b = None):
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -1973,7 +1977,7 @@ def fchs(info):
     return e
 
 def fsub(info, a, b = None):
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -1987,7 +1991,7 @@ def fsub(info, a, b = None):
 
 def fsubr(info, a, b = None):
     # Invalid emulation
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2000,7 +2004,7 @@ def fsubr(info, a, b = None):
     return e
 
 def fmul(info, a, b = None):
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2013,7 +2017,7 @@ def fmul(info, a, b = None):
     return e
 
 def fdiv(info, a, b = None):
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2026,7 +2030,7 @@ def fdiv(info, a, b = None):
     return e
 
 def fdivr(info, a, b = None):
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2040,7 +2044,7 @@ def fdivr(info, a, b = None):
 
 def fdivp(info, a, b = None):
     # Invalid emulation
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2055,7 +2059,7 @@ def fdivp(info, a, b = None):
 
 def fdivrp(info, a, b = None):
     # Invalid emulation
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2070,7 +2074,7 @@ def fdivrp(info, a, b = None):
 
 def fmulp(info, a, b = None):
     # Invalid emulation
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2085,7 +2089,7 @@ def fmulp(info, a, b = None):
 
 def fsubp(info, a, b = None):
     # Invalid emulation
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2100,7 +2104,7 @@ def fsubp(info, a, b = None):
 
 def fsubrp(info, a, b = None):
     # Invalid emulation
-    if b == None:
+    if b is None:
         b = a
         a = float_st0
     e = []
@@ -2317,7 +2321,7 @@ def cbw(info):
     # TODO: emulation is not valid
     a = eax
     opmode, admode = info.opmode, info.admode
-    if opmode == u16:
+    if opmode == x86_afs.u16:
         s = 16
         src = a[:8]
         dst = a[:16]
@@ -2396,7 +2400,7 @@ def ins(info):
 def sidt(info, a):
     e = []
     if not isinstance(a, ExprMem) or a.size!=32:
-      raise 'not exprmem 32bit instance!!'
+      raise ValueError('not exprmem 32bit instance!!')
     b = a.arg
     print("DEFAULT SIDT ADDRESS %s!!"%a)
     e.append(ExprAff(ExprMem(b, 32), ExprInt32(0xe40007ff)))
@@ -3045,7 +3049,7 @@ mnemo_func = {'mov': mov,
 
 
 
-class ia32_rexpr:
+class ia32_rexpr(object):
 
     noad = "no_ad"
     ad = "ad"
@@ -3205,7 +3209,7 @@ def symb_to_Expr(s):
             return ExprOp('-', ExprId(name0), ExprId(name1))
     raise ValueError("not impl symb %s"%s)
 
-def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set()):
+def dict_to_Expr(d, modifs = {}, opmode = x86_afs.u32, admode = x86_afs.u32, segm_to_do = set()):
     size = [x86_afs.u32, x86_afs.u08][modifs[w8]==True]
     #overwrite w8
     if modifs[sd]!=None:
@@ -3220,7 +3224,7 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
     if is_reg(d):
         n = [x for x in d if type(x) == int]
         if len(n)!=1:
-            raise ValueError("bad reg! %s"%str(d))
+            raise ValueError("bad reg! %s"%d)
         n = n[0]
         if x86_afs.size in d and d[x86_afs.size] == x86_afs.size_seg :
             t = ia32_rexpr.reg_listsg
@@ -3296,12 +3300,12 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
                 out.append(ExprInt(d[k]))
             elif type(k) == int:
                 if d[k] ==1:
-                    if admode == u16:
+                    if admode == x86_afs.u16:
                         out.append(ia32_rexpr.reg_list16[k])
                     else:
                         out.append(ia32_rexpr.reg_list32[k])
                 else:
-                    if admode == u16:
+                    if admode == x86_afs.u16:
                         out.append(ExprOp('*', ExprInt(int_cast(d[k])), ia32_rexpr.reg_list16[k]))
                     else:
                         out.append(ExprOp('*', ExprInt(int_cast(d[k])), ia32_rexpr.reg_list32[k]))
@@ -3311,9 +3315,9 @@ def dict_to_Expr(d, modifs = {}, opmode = u32, admode = u32, segm_to_do = set())
             elif k == 'txt':
                 pass
             else:
-                raise 'strange ad componoant: %s'%str(d)
+                raise ValueError('strange ad componoant: %s'%d)
         if not out:
-            raise 'arg zarb expr %s'%str(d)
+            raise ValueError('arg zarb expr %s'%d)
         e = out[0]
         for o in out[1:]:
             e = ExprOp('+', e, o)

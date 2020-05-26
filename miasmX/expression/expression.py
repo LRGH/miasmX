@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
-from miasmX.tools.modint import moduint, int8, int16, int32, int64
+from miasmX.tools.modint import moduint
 try:
     # Needed for compatibility with python2.3
     from plasmasm.python.compatibility import set, sorted
@@ -26,7 +26,8 @@ except ImportError:
 tip = 'tip'
 
 def slice_rest(size, start, stop):
-    if start >=size or stop > size: raise 'bad slice rest %s %s %s'%(str(size), str(start), str(stop))
+    if start >=size or stop > size:
+        raise ValueError('bad slice rest %s %s %s'%(size, start, stop))
     if start == stop: return [(0,size)]
     rest = []
     if start !=0:
@@ -81,7 +82,7 @@ def visit_chk(visitor):
     return wrapped
 
 
-class Expr:
+class Expr(object):
     is_term = False
     is_simp = False
     is_eval = False
@@ -106,7 +107,6 @@ class Expr:
         return not self.__eq__(a)
     def toC(self):
         raise ValueError("%s"%self)
-        return self.arg.toC()
     def __add__(self, a):
         return ExprOp('+', self, a)
     def __sub__(self, a):
@@ -340,7 +340,8 @@ class ExprCond(Expr):
 
 class ExprMem(Expr):
     def __init__(self, arg, size = 32, segm = None):
-        if not isinstance(arg, Expr): raise 'arg must be expr'
+        if not isinstance(arg, Expr):
+            raise ValueError('arg must be expr')
         self.arg, self.size, self.segm = arg, size, segm
     def __str__(self):
         if self.segm:
@@ -413,7 +414,7 @@ class ExprOp(Expr):
             r = r.union(a.get_r(mem_read))
         return r
     def get_w(self):
-        raise ValueError('op cannot be written!', self)
+        raise ValueError('op cannot be written! %s'%self)
     #return 1st arg size XXX
     def get_size(self):
         a = self.args[0].get_size()
@@ -476,7 +477,6 @@ class ExprOp(Expr):
                 return "%s(%s)"%(self.op, self.args[0].toC())
             else:
                 raise ValueError('unknown op! %s'%self.op)
-                return '('+str(self.op)+self.args[0].toC()+')'
         elif len(self.args)==2:
             if self.op == "==":
                 return '(((%s&0x%x) == (%s&0x%x))?1:0)'%(self.args[0].toC(), my_size_mask[self.args[0].get_size()], self.args[1].toC(), my_size_mask[self.args[1].get_size()])
@@ -580,7 +580,7 @@ class ExprOp(Expr):
                                                  self.args[2].toC(),
                                                  my_size_mask[self.args[0].get_size()])
         else:
-            raise ValueError('not imple', str(self))
+            raise ValueError('not imple %s'%self)
     def visit(self, cb):
         args = [a.visit(cb) for a in self.args]
         for x in zip(self.args, args):
@@ -686,7 +686,7 @@ class ExprCompose(Expr):
         args = [(a[0].copy(), a[1], a[2]) for a in self.args]
         return ExprCompose(args)
 
-class set_expr:
+class set_expr(object):
     def __init__(self, l = []):
         self._list = []
         for a in l:
@@ -706,7 +706,7 @@ class set_expr:
         return False
     def remove(self ,a):
         if not self.discard(a):
-            raise ValueError('value not found %s'%str(a))
+            raise ValueError('value not found %s'%a)
     def update(self, list_a):
         if not isinstance(list_a, list) and not isinstance(list_a, set):
             raise ValueError('arg must be list or set')

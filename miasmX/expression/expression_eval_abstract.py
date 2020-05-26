@@ -16,10 +16,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.expression.expression import *
 import struct
 import logging
-from miasmX.expression.expression_helper import *
+from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
+from miasmX.tools.modint import int8, int16, int32, int64
+from miasmX.expression.expression import ExprAff, ExprId, ExprInt, ExprInt32, \
+    ExprMem, ExprOp, ExprCond, ExprSlice, ExprCompose, ExprTop, Expr
+from miasmX.expression.expression_helper import expr_simp
 
 try:
     # Needed for compatibility with python2.3
@@ -107,7 +110,7 @@ class mpool(object):
         p.pool_mem = dict(self.pool_mem)
         return p
 
-class eval_abs:
+class eval_abs(object):
     dict_size = {
         1:'B',
         2:'H',
@@ -123,20 +126,16 @@ class eval_abs:
         return cpt
 
     def my_bsf(self, a, default_val=0):
-        tmp = 0
         for i in range(32):
             if a & (1<<i):
                 return i
-
         return default_val
+
     def my_bsr(self, a, op_size, default_val = 0):
-        tmp = 0
         for i in range(op_size-1, -1, -1):
             if a & (1<<i):
                 return i
-
         return default_val
-
 
     def __init__(self, vars, func_read = None, func_write = None, log = None):
         self.pool = mpool()
@@ -144,7 +143,7 @@ class eval_abs:
             self.pool[v] = vars[v]
         self.func_read = func_read
         self.func_write = func_write
-        if log == None:
+        if log is None:
             log = logging.getLogger("expr_eval_int")
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(logging.Formatter("%(levelname)-5s: %(message)s"))
@@ -176,8 +175,6 @@ class eval_abs:
             if not str(x) in g:
                 xx = ExprId(str(x))
                 g[str(xx)] = xx
-            else:
-                xx = x
 
             xx = x
             print("%r %s"%(g[str(xx)], g[str(xx)]))
@@ -195,15 +192,6 @@ class eval_abs:
         if e in self.pool.pool_mem:
             return self.pool.pool_mem[e][0]
         return None
-
-        for k in self.pool:
-            if not isinstance(k, ExprMem):
-                continue
-            if k.arg != e:
-                continue
-            return k
-        return None
-
 
     def is_mem_in_target(self, e, t):
         ex = ExprOp('-', e.arg, t.arg)
@@ -258,8 +246,6 @@ class eval_abs:
                 ex = ExprOp('+', b.arg, ExprInt(uint32(b.size/8)))
                 ex = expr_simp(self.eval_expr(ex, {}))
 
-                rest_ptr = ex
-                rest_size = a.size - (ptr_diff*8 + b.size)
                 val = self.pool[a][ptr_diff*8 + b.size:a.size]
                 out.append((ExprMem(ex, val.get_size()), val))
 
@@ -605,7 +591,7 @@ class eval_abs:
                 tmp = k
                 break
         """
-        if tmp == None:
+        if tmp is None:
 
             v = self.find_mem_by_addr(a_val)
             if not v:
@@ -656,7 +642,7 @@ class eval_abs:
             ptr_index = 0
             while rest:
                 v = self.find_mem_by_addr(ptr)
-                if v == None:
+                if v is None:
                     #raise ValueError("cannot find %s in mem"%str(ptr))
                     val = ExprMem(ptr, 8)
                     v = val
@@ -741,7 +727,6 @@ class eval_abs:
         if isinstance(arg, ExprInt):
             return expr_simp(ExprSlice(arg, e.start, e.stop))
         if isinstance(arg, ExprCompose):
-            to_add = []
             return ExprSlice(arg, e.start, e.stop)
         return ExprSlice(arg, e.start, e.stop)
 
@@ -870,7 +855,6 @@ class eval_abs:
 
     def eval_instr(self, exprs):
         tmp_ops = self.get_instr_mod(exprs)
-        cste_propag = True
         mem_dst = []
         for op in tmp_ops:
             if isinstance(op, ExprMem):
@@ -884,7 +868,6 @@ class eval_abs:
 
                 if isinstance(expr_simp(op.arg), ExprTop):
                     raise ValueError('xx')
-                    continue
             else:
                 tmp = tmp_ops[op]
                 tmp = expr_simp(tmp)

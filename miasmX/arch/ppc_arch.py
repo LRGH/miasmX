@@ -70,7 +70,6 @@ class bm_meta(type):
         b = bases[0]
 
         dct["check"] = b.check_no
-        l = dct["l"]
         fbits = dct["fbits"]
         if fbits:
             l = len(fbits)
@@ -122,7 +121,7 @@ class bm(bm_base):
         return (v>>self.off) & ((1<<self.l)-1)
     def set_val(self, v = None):
 
-        if v == None and len(self.p_property) >= 1:
+        if v is None and len(self.p_property) >= 1:
             p = self.p_property[0]
             v = getattr(self, p)
         return (v&((1<<self.l)-1))<<self.off
@@ -482,7 +481,6 @@ class ppc_mnemo_metaclass(type):
             off-=mc.l
             mask.append(mc)
             for pname in m.p_property:
-                pfunc = "get_"+pname
                 p = property(lambda self=ret_c, pname=pname:getattr(getattr(self, "bm_"+pname), pname),
                              lambda self=ret_c,val=None,pname=pname:setattr(getattr(self, "bm_"+pname), pname, val))
 
@@ -511,7 +509,7 @@ class ppc_mnemo_metaclass(type):
 
     def check(self, op):
         for m in self.mask_chk:
-            if m.fbits==None:
+            if m.fbits is None:
                 continue
             if not m.check(op):
                 return False
@@ -584,8 +582,6 @@ spr_str[288] = 'CTR'
 sr_str = ['SR%d'%r for r in range(0x10)]
 
 all_regs = regs_str+cop_str+copr_str+cr_str+crb_str+fpr_str+spr_str
-
-from miasmX.arch.ia32_reg import x86_afs
 
 
 def is_symbol(a):
@@ -749,7 +745,7 @@ class ppc_mn(ppc_mn_base):
                     raise ValueError('cannot parse %.8X'%op)
         else:
             for m in self.mask:
-                ret = m.setprop()
+                m.setprop()
 
             full_mnemo = ppc_mn.pre_parse_mnemo(op)
             mnemo = full_mnemo.pop()
@@ -772,7 +768,7 @@ class ppc_mn(ppc_mn_base):
     def parse_opts(self, rest):
         if rest:
             raise ValueError('should not have rest here ', rest)
-        pass
+
     def str2name(self, n):
         pass
 
@@ -803,7 +799,7 @@ class ppc_mn(ppc_mn_base):
             if mnemo.startswith(n):
                 name = n
                 break
-        if name == None:
+        if name is None:
             raise ValueError('cannot parse name')
 
         rest = mnemo[len(n):]
@@ -1186,8 +1182,6 @@ class ppc_bc(ppc_mn):
             opts = opts[1:]
         if not opts:
             return
-        if not opts:
-            return
         if opts == 'A':
             self.aa = 1
         return
@@ -1228,8 +1222,6 @@ class ppc_bc(ppc_mn):
                     self.bo&=0x17
             else:
                 self.bo |=0x10
-
-                pass
 
         if len(args) >1:
             tmp = str2cr(args.pop())
@@ -1375,8 +1367,6 @@ class ppc_bctr(ppc_mn):
             opts = opts[1:]
         if not opts:
             return
-        if not opts:
-            return
         if opts == 'A':
             self.aa = 1
         return
@@ -1414,8 +1404,6 @@ class ppc_bctr(ppc_mn):
                     self.bo&=0x17
             else:
                 self.bo |=0x10
-
-                pass
 
         if len(args) >1:
             tmp = str2cr(args.pop())
@@ -1934,7 +1922,6 @@ class ppc_sc(ppc_mn):
 
     def parse_args(self, args):
         self.offs = 0
-        pass
 
     def __str__(self):
         name = self.getname()
@@ -2123,9 +2110,6 @@ tab_mn = [ppc_addi, ppc_ori, ppc_oris, ppc_xori, ppc_xoris, ppc_addic, ppc_addic
 
 
 if __name__ == "__main__":
-
-    import struct
-
 
     for op in [0x7D4A5214, 0x7FAA4A14, 0x7D615A14]:
 

@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 from miasmX.arch.ia32_reg import x86_afs
-from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64, int8, int16, int32, int64
+from miasmX.tools.modint import int32, uint32
 
 reglist_for_size = {
     x86_afs.u08: x86_afs.reg_list8,
@@ -204,7 +204,6 @@ def p_error(t):
         arg = frame.f_back.f_back.f_locals['input']
         line = frame.f_back.f_back.f_back.f_back.f_locals['l']
         raise ValueError('Error in YACC parsing token %s\n\tin arg %r\n\tfor line %r'%(t,arg,line))
-    return 'ERROR'
 
 precedence = (
     ('left','PLUS','MINUS'),
@@ -302,7 +301,7 @@ def p_expression_2(t):
     elif t[2] == '*':
         t[0] = dict_mul(t[1], t[3])
     else:
-        raise 'bad op'
+        raise ValueError('bad op')
 
 def p_expression_3(t):
     '''expression : LPAREN expression RPAREN'''

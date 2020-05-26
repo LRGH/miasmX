@@ -18,10 +18,22 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from miasmX.arch.ia32_sem import *
-from miasmX.expression.expression_helper import *
-from miasmX.expression.expression_eval_abstract import *
+from miasmX.tools.modint import uint32
+from miasmX.arch.ia32_reg import x86_afs
+from miasmX.arch.ia32_sem import mnemo_func, dict_to_Expr, init_regs, mov, \
+    eip, esi, edi, ecx, zf, cs, dr7, cr0, tsc1, init_cr0, MMXnoflags
+from miasmX.expression.expression import ExprInt, ExprCond, ExprOp, ExprMem, \
+    ExprCompose
+from miasmX.expression.expression_helper import expr_simp
+from miasmX.expression.expression_eval_abstract import eval_abs
 
+try:
+    # Needed for compatibility with python2.3
+    from plasmasm.python.compatibility import set
+except ImportError:
+    pass
+
+import logging
 log_emu_helper = logging.getLogger("emu.helper")
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter("%(levelname)-5s: %(message)s"))
@@ -124,7 +136,7 @@ def emul_full_expr(e, l, my_eip, env, machine):
             if not isinstance(my_ecx, ExprInt):
                 raise ValueError('Emulation fails for "%s". ECX value is %s'
                     % (l, str(machine.pool[ecx])))
-            if l.mnemo_mode== u16:
+            if l.mnemo_mode == x86_afs.u16:
                 my_ecx.arg&=0xFFFF
             if my_ecx.arg ==0:
                 break

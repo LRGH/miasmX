@@ -277,9 +277,9 @@ def parse_args(a):
     return args
 
 import re
-from miasmX.arch.ia32_arch import prefix_dic, x86_mn
+from miasmX.arch.ia32_arch import prefix_dic
 def parse_asm_x86(line):
-    words = re.split("\s+", line)
+    words = re.split(r"\s+", line)
     prefix = []
     while len(words):
         name = words.pop(0)
