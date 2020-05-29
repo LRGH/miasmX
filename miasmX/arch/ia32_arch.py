@@ -1339,7 +1339,7 @@ class x86allmncs:
 
         addop("nop",   [0x90],             noafs, no_rm         , {}                 ,{}                , {},                         )
 
-        addop("xchg",  [0x86],             noafs, [rmr]         , {w8:(0,0)}         ,{}                , {},                         )
+        addop("xchg",  [0x86],             noafs, [rmr]         , {w8:(0,0)}         ,{sw:True}         , {},                         )
 
         addop("xlat",  [0xD7],             noafs, no_rm         , {}                 ,{}                , {},                         )
 
