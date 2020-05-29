@@ -2742,7 +2742,7 @@ class x86_mn(x86_mn_base):
 
     def parse_mnemo(self, l):
         wordsplitted = shlex.shlex(l)
-        wordsplitted.wordchars += '.@'
+        wordsplitted.wordchars += '.@$'
         prefix = []
         args = ['']
         for name in wordsplitted:
