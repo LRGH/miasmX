@@ -549,6 +549,18 @@ def dict_to_ad(d, modifs = None, opmode = u32, admode = u32, asm_format='intel_s
                     else:
                         address[0] = '0'
             address = "+".join(address)
+            if '-' in symbol or symbol.startswith('Ltmp'):
+                # Hack with LtmpNN because they usually are aliases for foo-bar
+                # clang-900 generates and accepts DWORD PTR [ebx + foo-bar]
+                # and does not understand DWORD PTR foo-bar[ebx]
+                # Note that it also generates DWORD PTR [ebx + (foo-bar)+4]
+                # but only understands DWORD PTR [ebx + foo-bar+4], meaning
+                # that the compiler generates an asm that it rejects...
+                # But anyway, 32-bit compilation with Intel syntax and PIC
+                # fails on MacOSX, because the object file generated does
+                # not have the adequate relocations.
+                address += ' + ' + symbol
+                symbol = ''
             if immediate != None and int(immediate) != 0:
                 if len(address) > 0:
                     address = add_imm_to_string(address,immediate, imm_size)
@@ -2255,7 +2267,7 @@ class x86_mn(x86_mn_base):
                     args[0] = '*'+args[0]
         else:
             # jmp/call to indirect address has additional brackets
-            if self.m.name in ['jmp','call'] and self.arg[0].get(x86_afs.ad, False):
+            if self.m.name in ['jmp','call'] and self.arg[0].get(x86_afs.ad, False) and not args[0].endswith(']'):
                 args[0] = "[%s]"%args[0]
             # push word imm has a specific syntax
             if self.m.name == 'push' and is_imm(self.arg[0]) and self.arg[0][x86_afs.size] == x86_afs.u16:
