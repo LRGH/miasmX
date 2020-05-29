@@ -1951,13 +1951,8 @@ def mnemo_from_att(prefix, name, args, asm_format):
         'suffix_one_iflt',
         'suffix_one_ptr',
         ]:
-        if name.startswith('test') and asm_format.endswith('clang'):
-            # clang sometimes uses Intel argument order for 'test'
-            if not is_imm(args[1]): args.reverse()
-        if name.startswith('test'):
-            # gcc generates 'testl 4(%ebp), %edx' but binutils (objdump)
-            # syntax (and miasm) expect 'testl %edx, 4(%ebp)'
-            # Be liberal in what we accept :-)
+        if name.startswith('test') or name.startswith('xchg'):
+            # Be liberal in what we accept, because old clang has bugs
             if args[1][x86_afs.ad] != False: args.reverse()
         if name[:-1] in att_mnemo_table[table]:
             size = att_mnemo_table[table][0][name[-1]]
@@ -2168,15 +2163,6 @@ class x86_mn(x86_mn_base):
 
     def __str__(self, asm_format='intel_syntax noprefix'):
         if asm_format is None: asm_format = 'intel_syntax noprefix'
-        if not asm_format in [
-                'intel_syntax',
-                'intel_syntax noprefix',
-                'att_syntax binutils',
-                'att_syntax objdump',
-                'att_syntax clang',
-            ]:
-            raise ValueError('Unknown output format %s'% asm_format)
-
         prefix = self.prefix[:]
         mnemo = [ self.m.name ]
         if self.m.modifs[mmx]:
@@ -2267,9 +2253,6 @@ class x86_mn(x86_mn_base):
                     args[0] = args[0][1:]
                 else:
                     args[0] = '*'+args[0]
-            if mnemo[-1].startswith('test') and asm_format.endswith('clang'):
-                # clang sometimes uses Intel argument order for 'test'
-                if not is_imm(self.arg[1]): args.reverse()
         else:
             # jmp/call to indirect address has additional brackets
             if self.m.name in ['jmp','call'] and self.arg[0].get(x86_afs.ad, False):
@@ -2783,6 +2766,9 @@ class x86_mn(x86_mn_base):
             a[x86_afs.ad] = False
             if is_imm(a):
                 args[0][x86_afs.ad] = False
+        if name.startswith('test') or name.startswith('xchg'):
+            # Be liberal in what we accept, because old clang has bugs
+            if args[1][x86_afs.ad] != False: args.reverse()
         if name == 'fwait': name = 'wait'
         return prefix, name, args
     parse_mnemo = classmethod(parse_mnemo)
