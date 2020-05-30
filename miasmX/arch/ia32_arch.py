@@ -2802,6 +2802,11 @@ class x86_mn(x86_mn_base):
         # special case ommiting cl as argument
         if len(args) == 2 and name in ["shrd", "shld"]:
             args.append( {1: 1, x86_afs.ad: False, x86_afs.size: x86_afs.u08} )
+        # special case with implicit argument
+        if len(args) == 2 and name == "imul" \
+                and x86_afs.imm in args[1] \
+                and args[1][x86_afs.ad] == False:
+            args.insert(0, args[0])
         # special case ommiting st(1) as argument
         if len(args) == 0 and name in float_st_st1:
             args.append( {1: 1, x86_afs.ad: False, x86_afs.size: x86_afs.f32} )
