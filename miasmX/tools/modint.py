@@ -1,6 +1,5 @@
 # Modifications (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 
-import os
 try:
     # Needed for compatibility with python2.3
     from plasmasm.python.compatibility import one

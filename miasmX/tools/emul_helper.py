@@ -67,7 +67,8 @@ def get_instr_expr_args(l, args, my_eip):
     return e
 
 def get_instr_expr(l, my_eip, args = None, segm_to_do = set()):
-    if args==None:args = []
+    if args is None:
+        args = []
     for x in l.arg:
         args.append(dict_to_Expr(x, l.m.modifs, l.opmode, l.admode, segm_to_do))
     l.arg_expr = args
@@ -108,7 +109,7 @@ def emul_full_expr(e, l, my_eip, env, machine):
         #XXX HACK 16 bit
         tsc_inc = 0
         if 0x66 in l.prefix and l.m.name[-1]== "d":
-            raise "not impl 16 bit string"
+            raise ValueError("not impl 16 bit string")
         if l.m.name[:-1] in ["cmps", "scas"]: # repz or repnz
             zf_w = False
             for x in e:
@@ -141,7 +142,6 @@ def emul_full_expr(e, l, my_eip, env, machine):
             if my_ecx.arg ==0:
                 break
 
-            my_esi = machine.eval_expr(machine.pool[esi], {})
             my_edi = machine.eval_expr(machine.pool[edi], {})
             if expr_depth(my_edi) > 100:
                 raise ValueError('Emulation fails for "%s". EDI value is too complicated' % l)

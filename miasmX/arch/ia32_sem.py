@@ -161,9 +161,6 @@ init_ebp = ExprId("init_ebp", is_term=True, is_reg=True)
 
 
 
-init_tsc1 = ExprId("init_tsc1", is_reg=True)
-init_tsc2 = ExprId("init_tsc2", is_reg=True)
-
 init_cr0 = ExprId("init_cr0", is_reg=True)
 
 
@@ -1990,7 +1987,6 @@ def fsub(info, a, b = None):
     return e
 
 def fsubr(info, a, b = None):
-    # Invalid emulation
     if b is None:
         b = a
         a = float_st0
@@ -1999,7 +1995,7 @@ def fsubr(info, a, b = None):
         src = ExprOp('mem_%.2d_to_double'%b.get_size(), b)
     else:
         src = b
-    e.append(ExprAff(a, ExprOp('fdiv', src, a)))
+    e.append(ExprAff(a, ExprOp('fsub', src, a)))
     e += set_float_cs_eip(info)
     return e
 
@@ -2223,12 +2219,6 @@ def fprem1(info):
     e += set_float_cs_eip(info)
     return e
 
-
-def frndint(info):
-    e = []
-    e.append(ExprAff(float_st0, ExprOp('frndint', float_st0)))
-    e += set_float_cs_eip(info)
-    return e
 
 def fsin(info):
     e = []
@@ -2866,7 +2856,6 @@ mnemo_func = {'mov': mov,
               'cbw':cbw,
               'cwde':cbw,
               'cwd':cwd,
-              'daa':aaa_stub,
               'aam':aaa_stub,
               'aad':aaa_stub,
               'aas':aaa_stub,
@@ -2946,7 +2935,6 @@ mnemo_func = {'mov': mov,
               'fptan':fptan,
               'fprem':fprem,
               'fprem1':fprem1,
-              'frndint':frndint,
               'fsin':fsin,
               'fcos':fcos,
               'fscale':fscale,
@@ -2994,7 +2982,6 @@ mnemo_func = {'mov': mov,
               'bt':bt,
               'cpuid':cpuid,
               'lgdt':lgdt,
-              'jo': jo,
               'fcom':fcom,
               'ficom':ficom,
               'fcomi':fcomi,
@@ -3219,7 +3206,6 @@ def dict_to_Expr(d, modifs = {}, opmode = x86_afs.u32, admode = x86_afs.u32, seg
 
     tab32 = {ia32_rexpr.u08:ia32_rexpr.reg_list8, ia32_rexpr.u16:ia32_rexpr.reg_list16, ia32_rexpr.u32:ia32_rexpr.reg_list32,ia32_rexpr.f32:ia32_rexpr.reg_flt,ia32_rexpr.f64:ia32_rexpr.reg_flt, x86_afs.mm:ia32_rexpr.reg_mm, x86_afs.xmm:ia32_rexpr.reg_xmm}
     tab16 = {ia32_rexpr.u08:ia32_rexpr.reg_list8, ia32_rexpr.u16:ia32_rexpr.reg_list32, ia32_rexpr.u32:ia32_rexpr.reg_list16}
-    ad_size = {ia32_rexpr.u08:ia32_rexpr.u08, ia32_rexpr.u16:ia32_rexpr.u16, ia32_rexpr.u32:ia32_rexpr.u32, ia32_rexpr.f32:ia32_rexpr.u32, ia32_rexpr.f64:ia32_rexpr.u32}
 
     if is_reg(d):
         n = [x for x in d if type(x) == int]

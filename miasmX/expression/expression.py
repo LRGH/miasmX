@@ -160,7 +160,6 @@ class ExprTop(Expr):
     def __init__(self, e=None):
         fdqs
         self.e = e
-        pass
     def __str__(self):
         return "top(%s)"%str(self.e)
     def get_r(self, mem_read=False):
@@ -801,7 +800,7 @@ def MatchExpr(e, m, tks, result = None):
     try to match m expression with e expression with tks jokers
     result is output dictionnary with matching joker values
     """
-    if result == None:
+    if result is None:
         result = {}
     #print('match %s %s %s %s'%(e, m, tks, result))
     if m in tks:
