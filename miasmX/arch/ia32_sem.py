@@ -508,17 +508,6 @@ def update_flag_arith(a):
     return e
 
 
-def check_ops_msb(a, b, c):
-    if not a or not b or not c or a!=b or a!=c:
-        raise ValueError('bad ops size %s %s %s'%(a, b, c))
-
-def arith_flag(a, b, c):
-    a_s, b_s, c_s = a.get_size(), b.get_size(), c.get_size()
-    check_ops_msb(a_s, b_s, c_s)
-    a_s, b_s, c_s = get_op_msb(a), get_op_msb(b), get_op_msb(c)
-    return a_s, b_s, c_s
-
-
 #checked: ok for adc add because of b & c before +cf
 def update_flag_add_cf(a, b, c):
     return ExprAff(cf, get_op_msb((a ^ b) ^ c) ^ get_op_msb((a ^ c) & (~(a ^ b))))

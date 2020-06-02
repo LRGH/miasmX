@@ -65,7 +65,7 @@ prefix_seg = {0:0x26, 1:0x2E, 2:0x36, 3:0x3E, 4:0x64, 5:0x65}
 
 prefix_seg_inv = dict(map(lambda x:(x[1],x[0]), prefix_seg.items()))
 
-class mnemonic:
+class mnemonic(object):
     def __init__(self, name, opc, afs, rm, modifs, modifs_orig, sem):
         self.name = name
         self.opc = opc
@@ -575,7 +575,7 @@ def dict_to_ad(d, modifs = None, opmode = u32, admode = u32, asm_format='intel_s
 
 
 
-class x86allmncs:
+class x86allmncs(object):
     def print_op(self, optab, decal):
         cpt = -1
         for i in optab:
