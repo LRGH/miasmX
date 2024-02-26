@@ -39,6 +39,8 @@ tests = [
                              'ds:@8[(0x0+ebp)] = 0xFE')]),
 ('662e0f1f840000000000',  '0xA',      []),
 ('660f72d101', '0x5',      [('xmm1 = MMX(xmm1, 0x1, 0x0)')]),
+('ffe0',       'init_eax', [('eip = eax')]),
+('3effe0',     'init_eax', [('eip = eax')]),
 ]
 
 @pytest.mark.parametrize("bin, result, expressions", tests)

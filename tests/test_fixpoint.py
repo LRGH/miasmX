@@ -217,6 +217,7 @@ tests = [
     "psrld xmm1, 1",
     "psllw xmm1, 1",
     "pause",
+    "notrack jmp eax",
     # "pinsrw eax, xmm0, 0",           # BUG: not fixpoint
     "fnstcw ax", # Invalid, yet assembled to D9.F8 aka "fprem" by miasm
     "callf eax", # Invalid, yet assembled to invalid FF.D8 by miasm

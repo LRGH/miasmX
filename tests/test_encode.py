@@ -5,6 +5,8 @@ from miasmX.arch.ia32_arch import x86mnemo
 tests = [
 ('nop',             'nop',             '90'),
 ('pause',           'pause',           'f390'),
+('jmp eax',         'jmp eax',         'ffe0'),
+('notrack jmp eax', 'notrack jmp eax', '3effe0'),
 ]
 
 @pytest.mark.parametrize("intel, att, bin", tests)

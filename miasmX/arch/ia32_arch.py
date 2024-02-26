@@ -58,7 +58,7 @@ tab_max_uint = {x86_afs.u08:0xFF, x86_afs.u16:0xFFFF, x86_afs.u32:uint32.limit-1
 
 
 
-prefix_dic = {"lock":0xF0, "repnz":0xF2, "repne":0xF2, "repz":0xF3, "repe":0xF3, "rep":0xF3, }
+prefix_dic = {"lock":0xF0, "repnz":0xF2, "repne":0xF2, "repz":0xF3, "repe":0xF3, "rep":0xF3, "notrack":0x3E}
 
 #'es'|'cs'|'ss'|'ds'|'fs'|'gs') ':' '''
 prefix_seg = {0:0x26, 1:0x2E, 2:0x36, 3:0x3E, 4:0x64, 5:0x65}
@@ -2202,6 +2202,8 @@ class x86_mn(x86_mn_base):
             elif p == 0xF3:
                 mnemo.insert(0, "rep")
             # Group 2: Segment override prefixes / Branch hints
+            elif p == 0x3E and self.m.name == "jmp":
+                mnemo.insert(0, "notrack")
             elif p in [0x2E,0x36,0x3E,0x26,0x64,0x65]:
                 pass
             # Group 3: Operand-size override
