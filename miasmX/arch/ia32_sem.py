@@ -2864,6 +2864,8 @@ mnemo_func = {'mov': mov,
               'fcomp':fcomp,
               'nop':nop,
               'fnop':nop, #XXX
+              'endbr32':nop,
+              'endbr64':nop,
               'prefetcht0':prefetch,
               'prefetcht1':prefetch,
               'prefetcht2':prefetch,

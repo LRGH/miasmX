@@ -1106,6 +1106,8 @@ class x86allmncs(object):
         addop("dec",   [0x48],             reg  , no_rm         , {}                 ,{}                , {},                         )
         addop("dec",   [0xFE],             d1   , no_rm         , {w8:(0,0)}         ,{}                , {},                         )
         addop("div",   [0xF6],             d6   , no_rm         , {w8:(0,0)}         ,{}                , {},                         )
+        addop("endbr32",[0xF3,0x0F,0x1E,0xFB],noafs,no_rm       , {}                 ,{}                , {},                         )
+        addop("endbr64",[0xF3,0x0F,0x1E,0xFA],noafs,no_rm       , {}                 ,{}                , {},                         )
 
         addop("enter", [0xC8],             noafs, [u16, u08]    , {}                 ,{}                , {},                         )
 
@@ -1185,7 +1187,7 @@ class x86allmncs(object):
         addop("mov",   [0x8C],             noafs, [rmr]         , {sw:(0,1)}         ,{sg:True,sw:True} , {},                         )
         addop("mov",   [0xC6],             d0   , [imm]         , {w8:(0,0)}         ,{}                , {},                         )
 
-        addop("movnti",[0x0F, 0xC3],       noafs, [rmr]         , {}                 ,{sw:True}                , {},                         )
+        addop("movnti",[0x0F, 0xC3],       noafs, [rmr]         , {}                 ,{sw:True}         , {},                         )
 
         addop("movsb", [0xA4],             noafs, no_rm         , {}                 ,{w8:True}         , {},                         )
         # Note that the MMX movsd is renamed "mov#ups#"
@@ -1403,8 +1405,8 @@ class x86allmncs(object):
         addop("wait",  [0x9B],             noafs, no_rm         , {}                 ,{}                , {},                         )
         #ddop("fwait", [0x9B],             noafs, no_rm         , {}                 ,{}                , {},                         )
 
-        addop("fild",  [0xDF],             d0,    no_rm         , {wd:(0,2)}         ,{}        , {},                         )
-        addop("fild",  [0xDF],             d5,    no_rm         , {}                 ,{sd:False,wd:False}, {},                         ) #XXX 64
+        addop("fild",  [0xDF],             d0,    no_rm         , {wd:(0,2)}         ,{}                , {},                         )
+        addop("fild",  [0xDF],             d5,    no_rm         , {}                 ,{sd:False,wd:False},{},                         ) #XXX 64
 
 
         addop("finit", [0x9B, 0xDB, 0xE3], noafs, no_rm         , {}                 ,{}                , {},                         ) #XXX no mnemo
@@ -1440,7 +1442,7 @@ class x86allmncs(object):
 
 
         addop("fst",   [0xD9],             d2,    [rmr]         , {sd:(0,2)}         ,{sd:True}         , {},                         )
-        addop("fst",   [0xDD, 0xD0],       reg,   no_rm         , {}                 ,{sd:True}        , {},                         )
+        addop("fst",   [0xDD, 0xD0],       reg,   no_rm         , {}                 ,{sd:True}         , {},                         )
         addop("fstp",  [0xD9],             d3,    [rmr]         , {sd:(0,2)}         ,{sd:True}         , {},                         )
         addop("fstp",  [0xDB],             d7,    no_rm         , {}                 ,{sd:'fp80'}       , {},                         ) #XXX 80
         addop("fstp",  [0xDD, 0xD8],       reg,   no_rm         , {}                 ,{sd:True}         , {},                         )
@@ -1594,28 +1596,28 @@ class x86allmncs(object):
         addop("#p#movzxwd", [0x0F, 0x38,0x33], noafs, [rmr]     , {}                 ,{mmx:True}        , {},                         )
         addop("#p#movzxwq", [0x0F, 0x38,0x34], noafs, [rmr]     , {}                 ,{mmx:True}        , {},                         )
         addop("#p#movzxdq", [0x0F, 0x38,0x35], noafs, [rmr]     , {}                 ,{mmx:True}        , {},                         )
-        addop("round##PS#", [0x0F, 0x3A,0x08], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("round##PD#", [0x0F, 0x3A,0x09], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("round##SS#", [0x0F, 0x3A,0x0A], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("round##SD#", [0x0F, 0x3A,0x0B], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("blend##PS#", [0x0F, 0x3A,0x0C], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("blend##PD#", [0x0F, 0x3A,0x0D], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("#p#blendw",  [0x0F, 0x3A,0x0E], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("#p#alignr",  [0x0F, 0x3A,0x0F], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
+        addop("round##PS#", [0x0F, 0x3A,0x08], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("round##PD#", [0x0F, 0x3A,0x09], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("round##SS#", [0x0F, 0x3A,0x0A], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("round##SD#", [0x0F, 0x3A,0x0B], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("blend##PS#", [0x0F, 0x3A,0x0C], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("blend##PD#", [0x0F, 0x3A,0x0D], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("#p#blendw",  [0x0F, 0x3A,0x0E], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("#p#alignr",  [0x0F, 0x3A,0x0F], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
         addop("#p#extrb",   [0x0F, 0x3A,0x14], noafs, [rmr,u08] , {}                 ,{mmx:True,sw:True}, {w8:True},                  )
         addop("#p#extrw",   [0x0F, 0x3A,0x15], noafs, [rmr,u08] , {}                 ,{mmx:True,sw:True}, {w8:True},                  )
         addop("#p#extrd",   [0x0F, 0x3A,0x16], noafs, [rmr,u08] , {}                 ,{mmx:True,sw:True}, {w8:True},                  )
         addop("extract##PS#",[0x0F,0x3A,0x17], noafs, [rmr,u08] , {}                 ,{mmx:True,sw:True}, {w8:True},                  )
         addop("#p#insrb",   [0x0F, 0x3A,0x20], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
         addop("#p#insrd",   [0x0F, 0x3A,0x22], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
-        addop("dp##PS#",    [0x0F, 0x3A,0x40], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("dp##PD#",    [0x0F, 0x3A,0x41], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("m##PS#adbw", [0x0F, 0x3A,0x42], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("#p#clmumqdq",[0x0F, 0x3A,0x44], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("#p#cmpestrm",[0x0F, 0x3A,0x60], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("#p#cmpestri",[0x0F, 0x3A,0x61], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("#p#cmpistrm",[0x0F, 0x3A,0x62], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
-        addop("#p#cmpistri",[0x0F, 0x3A,0x63], noafs, [rmr,u08] , {}                 ,{mmx:True}, {w8:True},                  )
+        addop("dp##PS#",    [0x0F, 0x3A,0x40], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("dp##PD#",    [0x0F, 0x3A,0x41], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("m##PS#adbw", [0x0F, 0x3A,0x42], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("#p#clmumqdq",[0x0F, 0x3A,0x44], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("#p#cmpestrm",[0x0F, 0x3A,0x60], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("#p#cmpestri",[0x0F, 0x3A,0x61], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("#p#cmpistrm",[0x0F, 0x3A,0x62], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
+        addop("#p#cmpistri",[0x0F, 0x3A,0x63], noafs, [rmr,u08] , {}                 ,{mmx:True}        , {w8:True},                  )
         addop("movmskp#S#", [0x0F, 0x50],  noafs, [rmr]         , {}                 ,{mmx:True}        , {},                         )
 
         addop("sqrt#ps#",   [0x0F, 0x51],  noafs, [rmr]         , {}                 ,{mmx:True}        , {},                         )
@@ -1844,6 +1846,7 @@ att_mnemo_table = {
         'sfence',
         'bound',
         'pause',
+        'endbr32', 'endbr64',
         ] + mnemo_mmx + mnemo_prefetch + mnemo_float_optional_suffix,
     'suffix_one_ptr': [ {
             'b': x86_afs.u08,
@@ -2313,8 +2316,10 @@ class x86_mn(x86_mn_base):
             m = None
             read_prefix = []
             prefix_done =False
+            read_bytes = []
             while True:
                 c = ord(bin.readbs())
+                read_bytes.append(c)
                 if not prefix_done and c in x86_afs.x86_prefix:
                     read_prefix.append(c)
                     continue
@@ -2322,6 +2327,22 @@ class x86_mn(x86_mn_base):
                     prefix_done = True
                 if l[c] is None:
                     log.debug( "unknown mnemo")
+                    # Try including the prefix
+                    l = x86mndb.db_mnemo
+                    read_prefix = []
+                    read_bytes.reverse()
+                    while read_bytes:
+                        c = read_bytes.pop()
+                        log.error("b %r"%c)
+                        if l[c] == None:
+                            break
+                        elif isinstance(l[c] ,mnemonic):
+                            m = l[c]
+                            break
+                        elif type(l[c]) == list:
+                            l = l[c]
+                        if not read_bytes:
+                            read_bytes.append(ord(bin.readbs()))
                     break
                 if isinstance(l[c] ,mnemonic):
                     m = l[c]

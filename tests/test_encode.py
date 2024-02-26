@@ -7,6 +7,8 @@ tests = [
 ('pause',           'pause',           'f390'),
 ('jmp eax',         'jmp eax',         'ffe0'),
 ('notrack jmp eax', 'notrack jmp eax', '3effe0'),
+('endbr32',         'endbr32',         'f30f1efb'),
+('endbr64',         'endbr64',         'f30f1efa'),
 ]
 
 @pytest.mark.parametrize("intel, att, bin", tests)

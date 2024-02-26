@@ -41,6 +41,8 @@ tests = [
 ('660f72d101', '0x5',      [('xmm1 = MMX(xmm1, 0x1, 0x0)')]),
 ('ffe0',       'init_eax', [('eip = eax')]),
 ('3effe0',     'init_eax', [('eip = eax')]),
+('f30f1efb',   '0x4',      []),
+('f30f1efa',   '0x4',      []),
 ]
 
 @pytest.mark.parametrize("bin, result, expressions", tests)
