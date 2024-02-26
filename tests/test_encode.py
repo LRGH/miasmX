@@ -4,6 +4,7 @@ from miasmX.arch.ia32_arch import x86mnemo
 
 tests = [
 ('nop',             'nop',             '90'),
+('pause',           'pause',           'f390'),
 ]
 
 @pytest.mark.parametrize("intel, att, bin", tests)

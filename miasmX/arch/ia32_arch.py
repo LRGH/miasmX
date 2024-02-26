@@ -1843,6 +1843,7 @@ att_mnemo_table = {
         'mfence',
         'sfence',
         'bound',
+        'pause',
         ] + mnemo_mmx + mnemo_prefetch + mnemo_float_optional_suffix,
     'suffix_one_ptr': [ {
             'b': x86_afs.u08,
@@ -2251,6 +2252,9 @@ class x86_mn(x86_mn_base):
                     NOT_POSSIBLE
         if len(args) == 0 and self.m.name in float_st_st1:
             args = [ st+'(1)' ]
+        # Special case: 'rep nop' is called 'pause'
+        if mnemo == ['rep','nop']:
+            mnemo = ['pause']
         # Special case: when gcc produces 'rep ret'
         # http://mikedimmick.blogspot.fr/2008/03/what-heck-does-ret-mean.html
         # it usually puts it on two separate lines, and old versions of

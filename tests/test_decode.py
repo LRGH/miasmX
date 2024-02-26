@@ -17,6 +17,7 @@ tests = [
 ('662e0f1f840000000000',
                'nop       WORD PTR cs:[eax+eax]','nop       %cs:(%eax,%eax)'),
 ('660f72d101', 'psrld     xmm1, 1',              'psrld     $1, %xmm1'),
+('f390',       'pause     ',                     'pause     '),
 ]
 
 @pytest.mark.parametrize("bin, intel, att", tests)
