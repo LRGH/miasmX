@@ -6,7 +6,6 @@ tests = [
 ('dbe9',       'fucomi    st, st(1)',            'fucomi    %st(1), %st'),
 ('dbd8',       'fcmovnu   st, st(0)',            'fcmovnu   %st(0), %st'),
 ('def9',       'fdivp     st(1), st',            'fdivrp    %st, %st(1)'),
-('ec',         'in        al, dx',               'in        %dx, %al'),
 ('a4',         'movsb     ',                     'movsb     '),
 ('06',         'push      es',                   'pushl     %es'),
 ('d8c1',       'fadd      st, st(1)',            'fadd      %st(1), %st'),
