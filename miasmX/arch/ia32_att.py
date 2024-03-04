@@ -275,17 +275,3 @@ def parse_args(a):
         if not x86_afs.size in l:
             l[x86_afs.size] = x86_afs.u32
     return args
-
-import re
-from miasmX.arch.ia32_arch import prefix_dic
-def parse_asm_x86(line):
-    words = re.split(r"\s+", line)
-    prefix = []
-    while len(words):
-        name = words.pop(0)
-        if name in prefix_dic:
-            prefix.append(prefix_dic[name])
-            name = ''
-        elif name != '':
-            break
-    return prefix, name, ' '.join(words)

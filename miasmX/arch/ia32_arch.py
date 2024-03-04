@@ -2045,6 +2045,21 @@ def mnemo_to_att(name, args, asm_format):
     raise ValueError("Mnemonic %r unknown"%name)
 
 
+import re
+def parse_asm_x86(line):
+    words = re.split(r"\s+", line)
+    prefix = []
+    while len(words):
+        name = words.pop(0)
+        if name in prefix_dic:
+            prefix.append(prefix_dic[name])
+            name = ''
+        elif name != '':
+            break
+    return prefix, name, ' '.join(words)
+
+from miasmX.arch.ia32_att import parse_args
+
 class x86_mnemo_metaclass(type):
     rebuilt_inst = True
 
@@ -2065,7 +2080,10 @@ class x86_mnemo_metaclass(type):
         i = cls.__new__(cls)
         i.__init__() # admode = u32, opmode = u32, sex = 0)
         return i._asm(l, symbol_off)
-
+    def asm_att(cls, l):
+        i = cls.__new__(cls)
+        i.__init__()
+        return i._asm_att(l)
 
     def fix_symbol(cls, a, symbol_pool = None):
         if type(a) in [int]+list(tab_int_size.keys()):
@@ -3368,6 +3386,28 @@ class x86_mn(x86_mn_base):
             for i in range(len(out_opc)):
                 candidate_out.append((c, parsed_args, (out_opc[i], parsed_val[i], opc_add), self.mnemo_mode))
         return candidate_out
+
+    def _asm_att(self, line, asm_format='att_syntax'):
+        instr = x86_mn()
+        log.debug("asm (AT&T): %s", line)
+        prefix, name, l_args = parse_asm_x86(line)
+        args = parse_args(l_args)
+        prefix, name = mnemo_from_att(prefix, name, args, asm_format)
+        x86_mn.arg_set_numpy_imm(args)
+        log.debug("name: %s", name)
+        log.debug("args: %s", args)
+        x86_mn.normalize_args(name, args)
+        co = self.asm_candidates(prefix, name, [a.copy() for a in args])
+        ac = self.asm_all_candidate(prefix, co)
+        return [x[0] for x in ac]
+        if len(co) == 0:
+            raise ValueError("Error parsing %r: %s %s"%(txt,name,args))
+        self.prefix = prefix
+        self.m = co[0][0]
+        self.arg = args
+        self.offset = 0
+        self.special_opcodes()
+        return self
 
     def _asm(self, l, symbol_off_out):
         log.debug("asm: %s", l)
