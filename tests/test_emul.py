@@ -46,7 +46,7 @@ tests = [
 ]
 
 @pytest.mark.parametrize("bin, result, expressions", tests)
-def test_decoder_intel(bin, result, expressions):
+def test_emul_instr(bin, result, expressions):
     op = x86mnemo.dis(binascii.unhexlify(bin))
     print(str(op))
     machine = emul_helper.x86_machine()
@@ -57,3 +57,54 @@ def test_decoder_intel(bin, result, expressions):
     assert len(expressions) == len(exprs)
     for i in range(len(expressions)):
         assert str(exprs[i]) in expressions[i]
+
+# AT&T syntax expected below
+piece_of_code = [
+('''xchgl %ebx, %eax
+addl $2, %ecx
+subl $2, %ecx
+adcl $2, %ecx
+negl %ecx
+xorl %edx, %edx
+xaddl %edx, %ecx
+notl %edx
+rorl %cl, %eax
+roll $6, %eax
+sbbl $-1, %ebx
+orl %edx, %eax
+andl %edx, %eax''',
+  [],
+  ['ac init_ac', 'af ((init_eax+(- (((init_ebx >>> (((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)[0:8]+0xFFFFFFFA))&0x1),0,1, 0x0,1,32))+0x1)&0x10)?(0x1,0x0)', 'cf 0x0', 'cr0 init_cr0', 'cs 0x9', 'df init_df', 'dr7 0x0', 'eax ((((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)&((init_ebx >>> (((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)[0:8]+0xFFFFFFFA))|(((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)))', 'ebp init_ebp', 'ebx (init_eax+(- (((init_ebx >>> (((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)[0:8]+0xFFFFFFFA))&0x1),0,1, 0x0,1,32))+0x1)', 'ecx ((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)', 'edi init_edi', 'edx (((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)', 'esi init_esi', 'esp init_esp', 'i_d init_i_d', 'i_f init_i_f', 'iopl_f init_iopl', 'nf ((((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)&((init_ebx >>> (((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)[0:8]+0xFFFFFFFA))|(((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)))[31:32]', 'nt init_nt', 'of 0x0', 'pf (parity ((((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)&((init_ebx >>> (((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)[0:8]+0xFFFFFFFA))|(((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF))))', 'rf init_rf', 'tf init_tf', 'tsc1 init_tsc1', 'tsc2 init_tsc2', 'vif init_vif', 'vip init_vip', 'vm init_vm', 'zf ((((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)&((init_ebx >>> (((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)[0:8]+0xFFFFFFFA))|(((- init_ecx)+(- ((((init_ecx^(init_ecx+0x2))&((init_ecx+0x2)^0x2))[31:32]^(init_ecx^(init_ecx+0x2)^0x2)[31:32]),0,1, 0x0,1,32))+0xFFFFFFFE)^0xFFFFFFFF)))?(0x0,0x1)']),
+
+('''fdiv %st, %st(2)
+fdivr %st, %st(2)
+fsub %st, %st(2)
+fsubr %st, %st(2)
+movl %eax, 32(%esi)
+fdivl 32(%esi)
+fdivrl 32(%esi)
+fsubl 32(%esi)
+fsubrl 32(%esi)
+fmul %st, %st(2)
+fmull 32(%esi)
+pslldq $4, %xmm3''',
+  ['@32[(init_esi+0x20)] init_eax'],
+  ['ac init_ac', 'af init_af', 'cf init_cf', 'cr0 init_cr0', 'cs 0x9', 'df init_df', 'dr7 0x0', 'eax init_eax', 'ebp init_ebp', 'ebx init_ebx', 'ecx init_ecx', 'edi init_edi', 'edx init_edx', 'esi init_esi', 'esp init_esp', 'float_st0 (float_st0 fmul (mem_64_to_double (init_eax,0,32, @8[(init_esi+0x24)],32,40, @8[(init_esi+0x25)],40,48, @8[(init_esi+0x26)],48,56, @8[(init_esi+0x27)],56,64)))', 'float_st2 (float_st2 fmul float_st0)', 'i_d init_i_d', 'i_f init_i_f', 'iopl_f init_iopl', 'nf init_nf', 'nt init_nt', 'of init_of', 'pf init_pf', 'reg_float_cs 0x9', 'reg_float_eip 0x0', 'rf init_rf', 'tf init_tf', 'tsc1 init_tsc1', 'tsc2 init_tsc2', 'vif init_vif', 'vip init_vip', 'vm init_vm', 'xmm3 MMX(xmm3, 0x4, 0x0)', 'zf init_zf']),
+]
+
+def asm_att(instr):
+    i = x86mnemo.asm_att(instr)
+    if len(i) == 0:
+        raise ValueError("Cannot asm %s"%instr)
+    return x86mnemo.dis(i[0])
+
+from miasmX.arch import ia32_sem
+@pytest.mark.parametrize("lines, mem, reg", piece_of_code)
+def test_emul_code(lines, mem, reg):
+    lines = [ asm_att(_) for _ in lines.split('\n') ]
+    machine = emul_helper.x86_machine()
+    retval = emul_helper.emul_lines(machine, lines)
+    assert mem == machine.dump_mem()
+    print(machine.dump_id())
+    assert reg == machine.dump_id()
+    #assert set(reg) <= set(machine.dump_id())

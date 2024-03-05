@@ -228,6 +228,8 @@ class ExprId(Expr):
         if not isinstance(a, ExprId):
             return False
         return self.name == a.name and self.size == a.size and self.is_reg == a.is_reg
+    def __lt__(self, a):
+        return self.name < a.name
     def __hash__(self):
         return hash(self.name)
     def __repr__(self):

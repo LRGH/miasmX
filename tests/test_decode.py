@@ -22,6 +22,7 @@ tests = [
 ('3effe0',     'notrack jmp       eax',          'notrack jmp       *%eax'),
 ('f30f1efb',   'endbr32   ',                     'endbr32   '),
 ('f30f1efa',   'endbr64   ',                     'endbr64   '),
+('93',         'xchg      eax, ebx',             'xchgl     %ebx, %eax'),
 ]
 
 @pytest.mark.parametrize("bin, intel, att", tests)
