@@ -16,12 +16,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.tools.modint import uint8, uint16, uint32, uint64, uint128
-from miasmX.expression.expression import ExprInt, ExprInt32, ExprInt64, \
+from miasmx.tools.modint import uint8, uint16, uint32, uint64, uint128
+from miasmx.expression.expression import ExprInt, ExprInt32, ExprInt64, \
     ExprId, ExprOp, ExprAff, ExprCond, ExprMem, ExprCompose, ExprSlice, \
     ExprInt_from
-from miasmX.arch.ia32_reg import x86_afs
-from miasmX.arch.ia32_arch import w8, wd, sd, dr, cr, sg, mmx, \
+from miasmx.arch.ia32_reg import x86_afs
+from miasmx.arch.ia32_arch import w8, wd, sd, dr, cr, sg, mmx, \
     is_reg, is_imm, is_address
 import struct, math
 try:

@@ -16,8 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
-from miasmX.tools.modint import moduint
+from miasmx.tools.modint import uint1, uint8, uint16, uint32, uint64
+from miasmx.tools.modint import moduint
 try:
     # Needed for compatibility with python2.3
     from plasmasm.python.compatibility import set, sorted

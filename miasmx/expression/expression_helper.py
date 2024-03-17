@@ -16,10 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
-from miasmX.expression.expression import ExprOp, ExprSlice, ExprCompose, \
+from miasmx.tools.modint import uint1, uint8, uint16, uint32, uint64
+from miasmx.expression.expression import ExprOp, ExprSlice, ExprCompose, \
     ExprCond, ExprInt, ExprMem
-from miasmX.expression.expression import canonize_expr_list
+from miasmx.expression.expression import canonize_expr_list
 
 tab_size_int = {1:uint1,
                 8:uint8,

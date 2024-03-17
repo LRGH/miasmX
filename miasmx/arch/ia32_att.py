@@ -1,6 +1,6 @@
 # (C) 2011-2017 Airbus, Louis.Granboulan@airbus.com
 
-from miasmX.arch.ia32_reg import x86_afs
+from miasmx.arch.ia32_reg import x86_afs
 
 tokens = (
     'NUMBER',

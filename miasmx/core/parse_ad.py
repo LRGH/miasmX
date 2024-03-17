@@ -16,8 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.arch.ia32_reg import x86_afs
-from miasmX.tools.modint import int32, uint32
+from miasmx.arch.ia32_reg import x86_afs
+from miasmx.tools.modint import int32, uint32
 
 reglist_for_size = {
     x86_afs.u08: x86_afs.reg_list8,

@@ -19,7 +19,7 @@
 import shlex
 import struct
 
-from miasmX.core.bin_stream import bin_stream
+from miasmx.core.bin_stream import bin_stream
 
 
 def hex2bin(op):

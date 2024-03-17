@@ -18,11 +18,11 @@
 #
 import struct
 import logging
-from miasmX.tools.modint import uint1, uint8, uint16, uint32, uint64
-from miasmX.tools.modint import int8, int16, int32, int64
-from miasmX.expression.expression import ExprAff, ExprId, ExprInt, ExprInt32, \
+from miasmx.tools.modint import uint1, uint8, uint16, uint32, uint64
+from miasmx.tools.modint import int8, int16, int32, int64
+from miasmx.expression.expression import ExprAff, ExprId, ExprInt, ExprInt32, \
     ExprMem, ExprOp, ExprCond, ExprSlice, ExprCompose, ExprTop, Expr
-from miasmX.expression.expression_helper import expr_simp
+from miasmx.expression.expression_helper import expr_simp
 
 try:
     # Needed for compatibility with python2.3

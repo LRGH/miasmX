@@ -18,14 +18,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-from miasmX.tools.modint import uint32
-from miasmX.arch.ia32_reg import x86_afs
-from miasmX.arch.ia32_sem import mnemo_func, dict_to_Expr, init_regs, mov, \
+from miasmx.tools.modint import uint32
+from miasmx.arch.ia32_reg import x86_afs
+from miasmx.arch.ia32_sem import mnemo_func, dict_to_Expr, init_regs, mov, \
     eip, esi, edi, ecx, zf, cs, dr7, cr0, tsc1, init_cr0, MMXnoflags
-from miasmX.expression.expression import ExprInt, ExprCond, ExprOp, ExprMem, \
+from miasmx.expression.expression import ExprInt, ExprCond, ExprOp, ExprMem, \
     ExprCompose
-from miasmX.expression.expression_helper import expr_simp
-from miasmX.expression.expression_eval_abstract import eval_abs
+from miasmx.expression.expression_helper import expr_simp
+from miasmx.expression.expression_eval_abstract import eval_abs
 
 try:
     # Needed for compatibility with python2.3

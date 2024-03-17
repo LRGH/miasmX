@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-from miasmX.tools.modint import uint8, uint16, uint32, uint64, int8, int16, int32, int64
+from miasmx.tools.modint import uint8, uint16, uint32, uint64, int8, int16, int32, int64
 try:
     # Needed for compatibility with python2.3
     from plasmasm.python.compatibility import set, sorted
@@ -24,7 +24,7 @@ except ImportError:
     pass
 import struct
 import logging
-from miasmX.arch.ia32_reg import x86_afs
+from miasmx.arch.ia32_reg import x86_afs
 import shlex
 
 
@@ -2058,7 +2058,7 @@ def parse_asm_x86(line):
             break
     return prefix, name, ' '.join(words)
 
-from miasmX.arch.ia32_att import parse_args
+from miasmx.arch.ia32_att import parse_args
 
 class x86_mnemo_metaclass(type):
     rebuilt_inst = True
@@ -2324,7 +2324,7 @@ class x86_mn(x86_mn_base):
 
     def _dis(self, bin):
         if not hasattr(bin, 'offset'):
-            from miasmX.core.bin_stream import bin_stream
+            from miasmx.core.bin_stream import bin_stream
             bin = bin_stream(bin)
         init_offset = bin.offset
 
@@ -2816,7 +2816,7 @@ class x86_mn(x86_mn_base):
                 args[-1] += ' ' + tok
         if args == ['']:
             args = []
-        from miasmX.core.parse_ad import parse_ad
+        from miasmx.core.parse_ad import parse_ad
         args = [ parse_ad(a) for a in args ]
         if name == 'push' and args[0][x86_afs.size] == x86_afs.u16:
             a = args[0]

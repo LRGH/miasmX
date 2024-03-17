@@ -1,6 +1,6 @@
 import pytest
 import binascii
-from miasmX.arch.ia32_arch import x86mnemo
+from miasmx.arch.ia32_arch import x86mnemo
 
 tests = [
 ('nop',             'nop',               '90'),

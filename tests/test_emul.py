@@ -1,9 +1,9 @@
 import pytest
 import binascii
-from miasmX.arch.ia32_arch import x86mnemo
-from miasmX.tools import emul_helper
-from miasmX.tools.modint import uint32
-from miasmX.expression.expression import ExprInt
+from miasmx.arch.ia32_arch import x86mnemo
+from miasmx.tools import emul_helper
+from miasmx.tools.modint import uint32
+from miasmx.expression.expression import ExprInt
 
 # expression display can depend on python version or on some non
 # deterministic behaviour, a list of possibilities is defined below
@@ -98,7 +98,7 @@ def asm_att(instr):
         raise ValueError("Cannot asm %s"%instr)
     return x86mnemo.dis(i[0])
 
-from miasmX.arch import ia32_sem
+from miasmx.arch import ia32_sem
 @pytest.mark.parametrize("lines, mem, reg", piece_of_code)
 def test_emul_code(lines, mem, reg):
     lines = [ asm_att(_) for _ in lines.split('\n') ]
